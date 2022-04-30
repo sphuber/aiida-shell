@@ -87,7 +87,7 @@ def generate_calc_job_node(generate_computer):
         if inputs:
             for link_label, input_node in flatten_inputs(inputs):
                 input_node.store()
-                node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
+                node.base.links.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
 
         node.store()
         retrieved = FolderData()
@@ -95,7 +95,7 @@ def generate_calc_job_node(generate_computer):
         if filepath_retrieved:
             retrieved.put_object_from_tree(filepath_retrieved)
 
-        retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
+        retrieved.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
         retrieved.store()
 
         return node
@@ -110,7 +110,7 @@ def generate_computer():
     def factory(label='localhost', hostname='localhost', scheduler_type='core.direct', transport_type='core.local'):
         """Return a :class:`aiida.orm.Computer` instance, either already existing or created."""
         try:
-            computer = Computer.objects.get(
+            computer = Computer.collection.get(
                 label=label, hostname=hostname, scheduler_type=scheduler_type, transport_type=transport_type
             )
         except exceptions.NotExistent:
@@ -141,7 +141,7 @@ def generate_code(generate_computer):
 
         try:
             filters = {'label': label, 'attributes.input_plugin_name': entry_point_name}
-            return Code.objects.query(filters=filters).one()[0]
+            return Code.collection.get(**filters)
         except exceptions.NotExistent:
             return Code(
                 label=label,

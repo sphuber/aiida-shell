@@ -9,7 +9,7 @@ import typing as t
 
 from aiida.common import exceptions
 from aiida.engine import run_get_node
-from aiida.orm import Code, Computer, SinglefileData, User, load_code, load_computer
+from aiida.orm import Code, Computer, SinglefileData, load_code, load_computer
 from aiida.plugins import CalculationFactory
 
 __all__ = ('launch_shell_job',)
@@ -104,7 +104,7 @@ def prepare_computer(computer: Computer | None = None) -> Computer:
             computer.configure(safe_interval=0.)
             computer.set_minimum_job_poll_interval(0.)
 
-    default_user = User.objects.get_default()
+    default_user = computer.backend.default_user
 
     if default_user and not computer.is_user_configured(default_user):
         computer.configure(default_user)
