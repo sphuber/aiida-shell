@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=redefined-outer-name
 """Tests for the :mod:`aiida_shell.parsers.shell` module."""
 import copy
-import io
 
 from aiida.orm import List, SinglefileData
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
-from aiida_shell.parsers.shell import ShellParser
 
 
 @pytest.fixture
@@ -43,7 +42,7 @@ def test_stdout(parse_calc_job, create_retrieved_temporary):
     """Test parsing of the stdout."""
     content_stdout = 'content stdout'
     retrieved_temporary = create_retrieved_temporary({ShellJob.FILENAME_STDOUT: content_stdout})
-    node, results, calcfunction = parse_calc_job(filepath_retrieved_temporary=retrieved_temporary)
+    _, results, calcfunction = parse_calc_job(filepath_retrieved_temporary=retrieved_temporary)
 
     assert calcfunction.is_finished_ok, calcfunction.exit_status
     assert isinstance(results[ShellJob.FILENAME_STDOUT], SinglefileData)
@@ -83,26 +82,22 @@ def test_outputs(parse_calc_job, create_retrieved_temporary):
         'filename_a': 'content_a',
         'filename_b': 'content_b',
     }
-    inputs = {
-        'outputs': List(list(files.keys()))
-    }
+    inputs = {'outputs': List(list(files.keys()))}
     retrieved_temporary = create_retrieved_temporary(files)
-    node, results, calcfunction = parse_calc_job(inputs=inputs, filepath_retrieved_temporary=retrieved_temporary)
+    _, results, calcfunction = parse_calc_job(inputs=inputs, filepath_retrieved_temporary=retrieved_temporary)
 
     assert calcfunction.is_finished_ok
 
-    for filename in files:
+    for filename, content in files.items():
         assert isinstance(results[filename], SinglefileData)
-        assert results[filename].get_content() == files[filename]
+        assert results[filename].get_content() == content
 
 
 def test_outputs_missing(parse_calc_job, create_retrieved_temporary):
     """Test parser returns ``ERROR_OUTPUT_FILES_MISSING`` if a specified output file was not retrieved."""
-    inputs = {
-        'outputs': List(['filename_a'])
-    }
+    inputs = {'outputs': List(['filename_a'])}
     retrieved_temporary = create_retrieved_temporary()
-    node, results, calcfunction = parse_calc_job(inputs=inputs, filepath_retrieved_temporary=retrieved_temporary)
+    node, _, calcfunction = parse_calc_job(inputs=inputs, filepath_retrieved_temporary=retrieved_temporary)
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILES_MISSING.status

@@ -22,7 +22,7 @@ def test_error_command_failed():
 
     Running ``tar`` without arguments should cause it to return a non-zero exit status.
     """
-    results, node = launch_shell_job('tar')
+    _, node = launch_shell_job('tar')
     assert node.is_failed
     assert node.exit_status == ShellJob.exit_codes.ERROR_COMMAND_FAILED.status
 

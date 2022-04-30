@@ -21,7 +21,7 @@ def test_code(generate_calc_job, generate_code):
     assert calc_info.codes_info[0].cmdline_params == []
     assert calc_info.codes_info[0].stdout_name == ShellJob.FILENAME_STDOUT
     assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
-    assert list(dirpath.iterdir()) == []
+    assert not list(dirpath.iterdir())
 
 
 def test_files(generate_calc_job, generate_code):
@@ -64,10 +64,9 @@ def test_filenames(generate_calc_job, generate_code):
     assert sorted([p.name for p in dirpath.iterdir()]) == ['filename_a', 'filename_b']
 
 
-@pytest.mark.parametrize(('arguments', 'exception'), (
-    (['{place}{holder}'], r'argument `.*` is invalid as it contains more than one placeholder.'),
-    (['{placeholder}'], r'argument placeholder `.*` not specified in `files`.'))
-)
+@pytest.mark.parametrize(('arguments', 'exception'),
+                         ((['{place}{holder}'], r'argument `.*` is invalid as it contains more than one placeholder.'),
+                          (['{placeholder}'], r'argument placeholder `.*` not specified in `files`.')))
 def test_arguments_invalid(generate_calc_job, generate_code, arguments, exception):
     """Test the ``arguments`` input with invalid placeholders."""
     inputs = {
@@ -81,11 +80,8 @@ def test_arguments_invalid(generate_calc_job, generate_code, arguments, exceptio
 def test_arguments(generate_calc_job, generate_code):
     """Test the ``arguments`` input."""
     arguments = List(['-a', '--flag', 'local/filepath'])
-    inputs = {
-        'code': generate_code(),
-        'arguments': arguments
-    }
-    dirpath, calc_info = generate_calc_job('core.shell', inputs)
+    inputs = {'code': generate_code(), 'arguments': arguments}
+    _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
     assert code_info.cmdline_params == arguments.get_list()
 
@@ -96,9 +92,11 @@ def test_arguments_files(generate_calc_job, generate_code):
     inputs = {
         'code': generate_code(),
         'arguments': arguments,
-        'files': {'file_a': SinglefileData(io.StringIO('content'))},
+        'files': {
+            'file_a': SinglefileData(io.StringIO('content'))
+        },
     }
-    dirpath, calc_info = generate_calc_job('core.shell', inputs)
+    _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
     assert code_info.cmdline_params == ['file_a']
 
@@ -109,9 +107,13 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
     inputs = {
         'code': generate_code(),
         'arguments': arguments,
-        'files': {'file_a': SinglefileData(io.StringIO('content'))},
-        'filenames': {'file_a': 'custom_filename'}
+        'files': {
+            'file_a': SinglefileData(io.StringIO('content'))
+        },
+        'filenames': {
+            'file_a': 'custom_filename'
+        }
     }
-    dirpath, calc_info = generate_calc_job('core.shell', inputs)
+    _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
     assert code_info.cmdline_params == ['custom_filename']

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=redefined-outer-name
 """Module with test fixtures."""
 import collections
 import pathlib
@@ -10,7 +11,7 @@ from aiida.common.folders import Folder
 from aiida.common.links import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
-from aiida.orm import CalcJobNode, Code, Computer, FolderData, RemoteData
+from aiida.orm import CalcJobNode, Code, Computer, FolderData
 from aiida.plugins import CalculationFactory, ParserFactory
 import pytest
 
@@ -34,9 +35,7 @@ def parse_calc_job(generate_calc_job_node, generate_parser):
         node = generate_calc_job_node(inputs=inputs)
         parser = generate_parser(entry_point_name)
         results, calcfunction = parser.parse_from_node(
-            node,
-            store_provenance=store_provenance,
-            retrieved_temporary_folder=filepath_retrieved_temporary
+            node, store_provenance=store_provenance, retrieved_temporary_folder=filepath_retrieved_temporary
         )
         return node, results, calcfunction
 
@@ -143,11 +142,8 @@ def generate_code(generate_computer):
             filters = {'label': label, 'attributes.input_plugin_name': entry_point_name}
             return Code.collection.get(**filters)
         except exceptions.NotExistent:
-            return Code(
-                label=label,
-                input_plugin_name=entry_point_name,
-                remote_computer_exec=[computer, executable]
-            ).store()
+            code = Code(label=label, input_plugin_name=entry_point_name, remote_computer_exec=[computer, executable])
+            return code.store()
 
     return factory
 
