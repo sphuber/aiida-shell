@@ -4,24 +4,23 @@ build-backend = 'flit_core.buildapi'
 
 [project]
 name = 'aiida-shell'
-dynamic = ['version']
-description = 'AiiDA plugin that makes running shell commands easy.'
+dynamic = ['description', 'version']
 authors = [
     {name = 'Sebastiaan P. Huber', email = 'mail@sphuber.net'}
 ]
 readme = 'README.md'
 license = {file = 'LICENSE.txt'}
 classifiers = [
-        'Development Status :: 3 - Alpha',
-        'Framework :: AiiDA',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: MacOS :: MacOS X',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Topic :: Scientific/Engineering'
+    'Development Status :: 3 - Alpha',
+    'Framework :: AiiDA',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: MacOS :: MacOS X',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Topic :: Scientific/Engineering'
 ]
 keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
@@ -56,8 +55,8 @@ name = 'aiida_shell'
 [tool.flit.sdist]
 exclude = [
     '.github/',
-    '.gitignore/',
-    '.pre-commit-config.yaml/',
+    '.gitignore',
+    '.pre-commit-config.yaml',
     'tests/',
 ]
 
