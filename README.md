@@ -4,11 +4,12 @@
 [![CI](https://github.com/sphuber/aiida-shell/workflows/ci/badge.svg)](https://github.com/sphuber/aiida-shell/actions/workflows/ci.yml)
 
 AiiDA plugin that makes running shell commands easy.
+Run any shell executable without writing a dedicated plugin or parser.
 
 
 ## Installation
 
-The recommended method of installation is through the [`pip` package installer for Python](https://pip.pypa.io/en/stable/):
+The recommended method of installation is through [`pip`](https://pip.pypa.io/en/stable/):
 
     pip install aiida-shell
 
@@ -41,7 +42,7 @@ results, node = launch_shell_job(
 )
 print(results['stdout'].get_content())
 ```
-which should print something `2022-03-17`.
+which should print something like `2022-03-17`.
 
 ### Running a shell command with files as arguments
 For commands that take arguments that refer to files, pass those files using the `files` keyword.
@@ -51,14 +52,13 @@ To specify where on the command line the files should be passed, use placeholder
 from io import StringIO
 from aiida.orm import SinglefileData
 from aiida_shell import launch_shell_job
-files = {
-    'file_a': SinglefileData(StringIO('string a')),
-    'file_b': SinglefileData(StringIO('string b')),
-}
 results, node = launch_shell_job(
     'cat',
     arguments=['{file_a}', '{file_b}'],
-    files=files
+    files={
+        'file_a': SinglefileData(StringIO('string a')),
+        'file_b': SinglefileData(StringIO('string b')),
+    }
 )
 print(results['stdout'].get_content())
 ```
@@ -73,19 +73,19 @@ To specify explicit filenames that should be used in the running directory, that
 from io import StringIO
 from aiida.orm import SinglefileData
 from aiida_shell import launch_shell_job
-files = {
-    'file_a': SinglefileData(StringIO('string a')),
-}
-filenames = {
-    'file_a': 'filename.txt'
-}
 results, node = launch_shell_job(
     'cat',
     arguments=['{file_a}'],
-    files=files, filenames=filenames
+    files={
+        'file_a': SinglefileData(StringIO('string a')),
+    },
+    filenames={
+        'file_a': 'filename.txt'
+    }
 )
 print(results['stdout'].get_content())
 ```
+which prints `string a`.
 
 ### Defining output files
 When the shell command is executed, AiiDA captures by default the content written to the stdout and stderr file descriptors.
@@ -95,13 +95,12 @@ Any other output files that need to be captured can be defined using the `output
 from io import StringIO
 from aiida.orm import SinglefileData
 from aiida_shell import launch_shell_job
-files = {
-    'input': SinglefileData(StringIO('2\n5\n3')),
-}
 results, node = launch_shell_job(
     'sort',
     arguments=['{input}','--output', 'sorted'],
-    files=files,
+    files={
+        'input': SinglefileData(StringIO('2\n5\n3')),
+    },
     outputs=['sorted']
 )
 print(results['sorted'].get_content())
@@ -117,13 +116,12 @@ These output files can be captured by specifying the `outputs` as `['x*']`:
 from io import StringIO
 from aiida.orm import SinglefileData
 from aiida_shell import launch_shell_job
-files = {
-    'single_file': SinglefileData(StringIO('line 0\nline 1\nline 2\n')),
-}
 results, node = launch_shell_job(
     'split',
     arguments=['-l', '1', '{single_file}'],
-    files=files,
+    files={
+        'single_file': SinglefileData(StringIO('line 0\nline 1\nline 2\n')),
+    },
     outputs=['x*']
 )
 print(results.keys())
