@@ -55,9 +55,9 @@ name = 'aiida_shell'
 [tool.flit.sdist]
 exclude = [
     '.github/',
+    'tests/',
     '.gitignore',
     '.pre-commit-config.yaml',
-    'tests/',
 ]
 
 [tool.flynt]
