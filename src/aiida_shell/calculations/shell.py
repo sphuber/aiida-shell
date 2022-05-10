@@ -31,7 +31,7 @@ class ShellJob(CalcJob):
         spec.input_namespace('files', valid_type=SinglefileData, required=False)
         spec.input('filenames', valid_type=Dict, required=False, serializer=to_aiida_type)
         spec.input('arguments', valid_type=List, required=False, serializer=to_aiida_type)
-        spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type)
+        spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
         spec.inputs['code'].required = True
 
         options = spec.inputs['metadata']['options']  # type: ignore[index]
@@ -59,6 +59,15 @@ class ShellJob(CalcJob):
         spec.exit_code(
             400, 'ERROR_COMMAND_FAILED', message='The command exited with a non-zero status: {status} {stderr}.'
         )
+
+    @classmethod
+    def validate_outputs(cls, value: List, _) -> str | None:
+        """Validate the ``outputs`` input."""
+        for reserved in [cls.FILENAME_STATUS, cls.FILENAME_STDERR, cls.FILENAME_STDOUT]:
+            if reserved in value:
+                return f'`{reserved}` is a reserved output filename and cannot be used in `outputs`.'
+
+        return None
 
     def prepare_for_submission(self, folder: Folder) -> CalcInfo:
         """Prepare the calculation for submission.

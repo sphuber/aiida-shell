@@ -64,9 +64,12 @@ def test_filenames(generate_calc_job, generate_code):
     assert sorted([p.name for p in dirpath.iterdir()]) == ['filename_a', 'filename_b']
 
 
-@pytest.mark.parametrize(('arguments', 'exception'),
-                         ((['{place}{holder}'], r'argument `.*` is invalid as it contains more than one placeholder.'),
-                          (['{placeholder}'], r'argument placeholder `.*` not specified in `files`.')))
+@pytest.mark.parametrize(
+    'arguments, exception', (
+        (['{place}{holder}'], r'argument `.*` is invalid as it contains more than one placeholder.'),
+        (['{placeholder}'], r'argument placeholder `.*` not specified in `files`.'),
+    )
+)
 def test_arguments_invalid(generate_calc_job, generate_code, arguments, exception):
     """Test the ``arguments`` input with invalid placeholders."""
     inputs = {
@@ -117,3 +120,16 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
     _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
     assert code_info.cmdline_params == ['custom_filename']
+
+
+@pytest.mark.parametrize(
+    'outputs, message', (
+        ([ShellJob.FILENAME_STATUS], r'`.*` is a reserved output filename and cannot be used in `outputs`.'),
+        ([ShellJob.FILENAME_STDERR], r'`.*` is a reserved output filename and cannot be used in `outputs`.'),
+        ([ShellJob.FILENAME_STDOUT], r'`.*` is a reserved output filename and cannot be used in `outputs`.'),
+    )
+)
+def test_validate_outputs(generate_calc_job, generate_code, outputs, message):
+    """Test the validator for the ``outputs`` argument."""
+    with pytest.raises(ValueError, match=message):
+        generate_calc_job('core.shell', {'code': generate_code(), 'outputs': outputs})

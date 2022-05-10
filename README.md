@@ -87,6 +87,8 @@ print(results['stdout'].get_content())
 ```
 which prints `string a`.
 
+The output filename can be anything except for `stdout`, `stderr` and `status`, which are reserved filenames.
+
 ### Defining output files
 When the shell command is executed, AiiDA captures by default the content written to the stdout and stderr file descriptors.
 The content is wrapped in a `SinglefileData` node and attached to the `ShellJob` with the `stdout` and `stderr` link labels, respectively.
