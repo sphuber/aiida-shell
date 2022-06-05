@@ -94,6 +94,11 @@ ignore = [
 [tool.pylint.master]
 load-plugins = ['pylint_aiida']
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    'ignore:Creating AiiDA configuration folder.*:UserWarning'
+]
+
 [tool.pylint.format]
 max-line-length = 120
 
