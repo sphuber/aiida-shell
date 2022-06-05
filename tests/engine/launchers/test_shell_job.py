@@ -4,7 +4,7 @@ import datetime
 import io
 import pathlib
 
-from aiida.orm import SinglefileData
+from aiida.orm import Float, Int, SinglefileData, Str
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
@@ -49,54 +49,68 @@ def test_arguments():
     assert results['stdout'].get_content().strip() == datetime.datetime.now().strftime('%Y-%m-%d')
 
 
-def test_files():
+def test_nodes_single_file_data():
     """Test a shellfunction that specifies positional CLI arguments that are interpolated by the ``kwargs``."""
     content_a = 'content_a'
     content_b = 'content_b'
-    files = {
+    nodes = {
         'file_a': SinglefileData(io.StringIO(content_a)),
         'file_b': SinglefileData(io.StringIO(content_b)),
     }
     arguments = ['{file_a}', '{file_b}']
-    results, node = launch_shell_job('cat', arguments=arguments, files=files)
+    results, node = launch_shell_job('cat', arguments=arguments, nodes=nodes)
 
     assert node.is_finished_ok
     assert results['stdout'].get_content().strip() == content_a + content_b
 
 
+def test_nodes_base_types():
+    """Test a shellfunction that specifies positional CLI arguments that are interpolated by the ``kwargs``."""
+    nodes = {
+        'float': Float(1.0),
+        'int': Int(2),
+        'str': Str('string'),
+    }
+    arguments = ['{float}', '{int}', '{str}']
+    results, node = launch_shell_job('echo', arguments=arguments, nodes=nodes)
+
+    assert node.is_finished_ok
+    assert results['stdout'].get_content().strip() == '1.0 2 string'
+
+
 @pytest.mark.parametrize('filename', ('filename.txt', pathlib.Path('filename.txt')))
 def test_files_type(tmp_path, filename):
-    """Test that ``files`` accepts ``str`` and ``pathlib.Path`` as values and converts them in ``SinglefileData``."""
+    """Test that ``nodes`` accepts ``str`` and ``pathlib.Path`` as values and converts them in ``SinglefileData``."""
     filepath = tmp_path / filename
     filepath.write_text('content')
 
     if isinstance(filename, str):
-        results, node = launch_shell_job('cat', arguments=['{filename}'], files={'filename': str(filepath)})
+        results, node = launch_shell_job('cat', arguments=['{filename}'], nodes={'filename': str(filepath)})
     else:
-        results, node = launch_shell_job('cat', arguments=['{filename}'], files={'filename': filepath})
+        results, node = launch_shell_job('cat', arguments=['{filename}'], nodes={'filename': filepath})
 
     assert node.is_finished_ok
     assert results['stdout'].get_content() == 'content'
 
 
 def test_files_invalid_type():
-    """Test the function raises a ``TypeError`` for an invalid type in ``files``."""
-    with pytest.raises(TypeError, match=r'received type .* for `filename` in `files`.*'):
-        launch_shell_job('cat', files={'filename': True})
+    """Test the function raises a ``TypeError`` for an invalid type in ``nodes``."""
+    with pytest.raises(TypeError, match=r'received type .* for `filename` in `nodes`.*'):
+        launch_shell_job('cat', nodes={'filename': True})
 
 
 def test_files_not_exist():
-    """Test the function raises a ``FileNotFoundError`` if a file in ``files`` does not exist."""
-    with pytest.raises(FileNotFoundError, match=r'the path `.*` specified in `files` does not exist.'):
-        launch_shell_job('cat', files={'filename': 'non-existing.txt'})
+    """Test the function raises a ``FileNotFoundError`` if a file in ``nodes`` does not exist."""
+    with pytest.raises(FileNotFoundError, match=r'the path `.*` specified in `nodes` does not exist.'):
+        launch_shell_job('cat', nodes={'filename': 'non-existing.txt'})
 
 
 def test_arguments_files():
     """Test a shellfunction that specifies positional and keyword CLI arguments interpolated by the ``kwargs``."""
     content = 'line 1\nline 2'
     arguments = ['-n', '1', '{single_file}']
-    files = {'single_file': SinglefileData(io.StringIO(content))}
-    results, node = launch_shell_job('head', arguments=arguments, files=files)
+    nodes = {'single_file': SinglefileData(io.StringIO(content))}
+    results, node = launch_shell_job('head', arguments=arguments, nodes=nodes)
 
     assert node.is_finished_ok
     assert results['stdout'].get_content().strip() == content.split('\n', maxsplit=1)[0]

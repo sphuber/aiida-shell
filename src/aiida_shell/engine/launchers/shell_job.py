@@ -9,7 +9,7 @@ import typing as t
 
 from aiida.common import exceptions
 from aiida.engine import run_get_node
-from aiida.orm import Code, Computer, SinglefileData, load_code, load_computer
+from aiida.orm import Code, Computer, Data, SinglefileData, load_code, load_computer
 from aiida.plugins import CalculationFactory
 
 __all__ = ('launch_shell_job',)
@@ -19,7 +19,7 @@ LOGGER = logging.getLogger('aiida_shell')
 
 def launch_shell_job(
     command: str,
-    files: dict[str, SinglefileData] | None = None,
+    nodes: dict[str, Data] | None = None,
     filenames: dict[str, str] | None = None,
     arguments: list[str] | None = None,
     outputs: list[str] | None = None,
@@ -28,10 +28,9 @@ def launch_shell_job(
     """Launch a :class:`aiida_shell.ShellJob` job for the given command.
 
     :param command: The shell command to run. Should be the relative command name, e.g., ``date``.
-    :param files: Optional dictionary of ``SinglefileData`` nodes. The content of the nodes is written to ``dirpath``
-        using the key as the relative filename, unless an explicit filename is defined in ``filenames``.
-    :param filenames: Optional dictionary of explicit filenames to use for the ``files`` to be written to ``dirpath``.
-    :param arguments: Optional list of command line arguments optionally containing placeholders for filenames.
+    :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
+    :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
+    :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes.
     :param outputs: Optional list of relative filenames that should be captured as outputs.
     :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
     :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
@@ -60,7 +59,7 @@ def launch_shell_job(
 
     inputs = {
         'code': code,
-        'files': convert_files_single_file_data(files or {}),
+        'nodes': convert_nodes_single_file_data(nodes or {}),
         'filenames': filenames or {},
         'arguments': arguments or [],
         'outputs': outputs or [],
@@ -112,22 +111,20 @@ def prepare_computer(computer: Computer | None = None) -> Computer:
     return computer
 
 
-def convert_files_single_file_data(
-    files: t.Mapping[str, str | pathlib.Path | SinglefileData]
-) -> dict[str, SinglefileData]:
+def convert_nodes_single_file_data(nodes: t.Mapping[str, str | pathlib.Path | Data]) -> t.MutableMapping[str, Data]:
     """Convert ``str`` and ``pathlib.Path`` instances to ``SinglefileData`` nodes.
 
-    :param files: Dictionary of filenames onto instances of ``SinglefileData``, ``str``, or ``pathlib.Path``.
+    :param nodes: Dictionary of ``Data``, ``str``, or ``pathlib.Path``.
     :raises TypeError: If a value in the mapping is of invalid type.
     :raises FileNotFoundError: If a filepath ``str`` or ``pathlib.Path`` does not correspond to existing file.
     :returns: Dictionary of filenames onto ``SinglefileData`` nodes.
     """
-    processed_files: dict[str, SinglefileData] = {}
+    processed_nodes: t.MutableMapping[str, Data] = {}
 
-    for key, value in files.items():
+    for key, value in nodes.items():
 
-        if isinstance(value, SinglefileData):
-            processed_files[key] = value
+        if isinstance(value, Data):
+            processed_nodes[key] = value
             continue
 
         if isinstance(value, str):
@@ -137,15 +134,15 @@ def convert_files_single_file_data(
 
         if not isinstance(filepath, pathlib.Path):
             raise TypeError(
-                f'received type {type(filepath)} for `{key}` in `files`. Should be `SinglefileData`, `str`, or `Path`.'
+                f'received type {type(filepath)} for `{key}` in `nodes`. Should be `Data`, `str`, or `Path`.'
             )
 
         filepath.resolve()
 
         if not filepath.exists():
-            raise FileNotFoundError(f'the path `{filepath}` specified in `files` does not exist.')
+            raise FileNotFoundError(f'the path `{filepath}` specified in `nodes` does not exist.')
 
         with filepath.open('rb') as handle:
-            processed_files[key] = SinglefileData(handle, filename=str(filepath.name))
+            processed_nodes[key] = SinglefileData(handle, filename=str(filepath.name))
 
-    return processed_files
+    return processed_nodes

@@ -45,7 +45,7 @@ print(results['stdout'].get_content())
 which should print something like `2022-03-17`.
 
 ### Running a shell command with files as arguments
-For commands that take arguments that refer to files, pass those files using the `files` keyword.
+For commands that take arguments that refer to files, pass those files using the `nodes` keyword.
 The keyword takes a dictionary of `SinglefileData` nodes.
 To specify where on the command line the files should be passed, use placeholder strings in the `arguments` keyword.
 ```python
@@ -55,7 +55,7 @@ from aiida_shell import launch_shell_job
 results, node = launch_shell_job(
     'cat',
     arguments=['{file_a}', '{file_b}'],
-    files={
+    nodes={
         'file_a': SinglefileData(StringIO('string a')),
         'file_b': SinglefileData(StringIO('string b')),
     }
@@ -65,10 +65,10 @@ print(results['stdout'].get_content())
 which prints `string astring b`.
 
 ### Running a shell command with files as arguments with specific filenames
-The keys in the `files` dictionary can only use alphanumeric characters and underscores.
+The keys in the `nodes` dictionary can only use alphanumeric characters and underscores.
 The keys will be used as the link label of the file in the provenance graph, and as the filename in the temporary directory in which the shell command will be executed.
-Certain commands may require specific filenames, for example including a file extension, e.g., `filename.txt`, but this cannot be used in the `files` arguments.
-To specify explicit filenames that should be used in the running directory, that are different from the keys in the `files` argument, use the `filenames` argument:
+Certain commands may require specific filenames, for example including a file extension, e.g., `filename.txt`, but this cannot be used in the `nodes` arguments.
+To specify explicit filenames that should be used in the running directory, that are different from the keys in the `nodes` argument, use the `filenames` argument:
 ```python
 from io import StringIO
 from aiida.orm import SinglefileData
@@ -76,7 +76,7 @@ from aiida_shell import launch_shell_job
 results, node = launch_shell_job(
     'cat',
     arguments=['{file_a}'],
-    files={
+    nodes={
         'file_a': SinglefileData(StringIO('string a')),
     },
     filenames={
@@ -89,6 +89,30 @@ which prints `string a`.
 
 The output filename can be anything except for `stdout`, `stderr` and `status`, which are reserved filenames.
 
+### Passing other `Data` types as input
+The `nodes` keyword does not only accept `SinglefileData` nodes, but it accepts also other `Data` types.
+For these node types, the content returned by the `value` property is directly cast to `str`, which is used to replace the corresponding placeholder in the `arguments`.
+So as long as the `Data` type implements this `value` property it should be supported.
+Of course, whether it makes sense for the value of the node to be used directly as a command line argument for the shell job, is up to the user.
+Typical useful examples, are the base types that ship with AiiDA, such as the `Float`, `Int` and `Str` types:
+```python
+from aiida.orm import Float, Int, Str
+from aiida_shell import launch_shell_job
+results, node = launch_shell_job(
+    'echo',
+    arguments=['{float}', '{int}', '{string}'],
+    nodes={
+        'float': Float(1.0),
+        'int': Int(2),
+        'string': Str('string'),
+    },
+)
+print(results['stdout'].get_content())
+```
+which prints `1.0 2 string`.
+This example is of course contrived, but when combining it with other components of AiiDA, which typically return outputs of these form, they can be used directly as inputs for `launch_shell_job` without having to convert the values.
+This ensures that provenance is kept.
+
 ### Defining output files
 When the shell command is executed, AiiDA captures by default the content written to the stdout and stderr file descriptors.
 The content is wrapped in a `SinglefileData` node and attached to the `ShellJob` with the `stdout` and `stderr` link labels, respectively.
@@ -99,8 +123,8 @@ from aiida.orm import SinglefileData
 from aiida_shell import launch_shell_job
 results, node = launch_shell_job(
     'sort',
-    arguments=['{input}','--output', 'sorted'],
-    files={
+    arguments=['{input}', '--output', 'sorted'],
+    nodes={
         'input': SinglefileData(StringIO('2\n5\n3')),
     },
     outputs=['sorted']
@@ -121,7 +145,7 @@ from aiida_shell import launch_shell_job
 results, node = launch_shell_job(
     'split',
     arguments=['-l', '1', '{single_file}'],
-    files={
+    nodes={
         'single_file': SinglefileData(StringIO('line 0\nline 1\nline 2\n')),
     },
     outputs=['x*']

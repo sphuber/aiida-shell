@@ -8,7 +8,7 @@ import typing as t
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
-from aiida.orm import Dict, List, SinglefileData, to_aiida_type
+from aiida.orm import Data, Dict, List, SinglefileData, to_aiida_type
 
 __all__ = ('ShellJob',)
 
@@ -28,7 +28,7 @@ class ShellJob(CalcJob):
         :param spec: The object to use to build up the process specification.
         """
         super().define(spec)
-        spec.input_namespace('files', valid_type=SinglefileData, required=False)
+        spec.input_namespace('nodes', valid_type=Data, required=False, validator=cls.validate_nodes)
         spec.input('filenames', valid_type=Dict, required=False, serializer=to_aiida_type)
         spec.input('arguments', valid_type=List, required=False, serializer=to_aiida_type)
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
@@ -61,6 +61,22 @@ class ShellJob(CalcJob):
         )
 
     @classmethod
+    def validate_nodes(cls, value: t.Mapping[str, Data], _) -> str | None:
+        """Validate the ``nodes`` input."""
+        for key, node in value.items():
+
+            if isinstance(node, SinglefileData):
+                continue
+
+            try:
+                str(node.value)
+            except AttributeError:
+                cls_name = node.__class__.__name__
+                return f'Unsupported node type for `{key}` in `nodes`: {cls_name} does not have the `value` property.'
+            except Exception as exception:  # pylint: disable=broad-except
+                return f'Casting `value` to `str` for `{key}` in `nodes` excepted: {exception}'
+
+    @classmethod
     def validate_outputs(cls, value: List, _) -> str | None:
         """Validate the ``outputs`` input."""
         for reserved in [cls.FILENAME_STATUS, cls.FILENAME_STDERR, cls.FILENAME_STDOUT]:
@@ -83,14 +99,14 @@ class ShellJob(CalcJob):
         else:
             inputs = {}
 
-        files = inputs.get('files', {})
+        nodes = inputs.get('nodes', {})
         filenames = (inputs.get('filenames', None) or Dict()).get_dict()
         arguments = (inputs.get('arguments', None) or List()).get_list()
         outputs = (inputs.get('outputs', None) or List()).get_list()
 
         code_info = CodeInfo()
         code_info.code_uuid = inputs['code'].uuid
-        code_info.cmdline_params = self.process_arguments_and_files(dirpath, files, filenames, arguments)
+        code_info.cmdline_params = self.process_arguments_and_nodes(dirpath, nodes, filenames, arguments)
         code_info.stderr_name = self.FILENAME_STDERR
         code_info.stdout_name = self.FILENAME_STDOUT
 
@@ -101,32 +117,36 @@ class ShellJob(CalcJob):
 
         return calc_info
 
-    def process_arguments_and_files(
-        self, dirpath: pathlib.Path, files: dict[str, SinglefileData], filenames: dict[str, str], arguments: list[str]
+    def process_arguments_and_nodes(
+        self, dirpath: pathlib.Path, nodes: dict[str, SinglefileData], filenames: dict[str, str], arguments: list[str]
     ) -> list[str]:
-        """Process the command line arguments and input files.
+        """Process the command line arguments and input nodes.
 
-        Loops over the list of arguments. If the argument is a placeholder, the ``files`` dictionary is searched for the
-        same key and if found, the content of that file is written to ``dirpath``. The key of the ``files`` dictionary
-        is used as the relative filename, unless an explicit filename is defined in ``filenames`` with the same key. The
-        placeholder is then replaced with the path of the written file, relative to ``dirpath``. After all arguments are
-        processed, any remaining files in ``files`` are also written to ``dirpath`` using the same logic for determining
-        the relative filename.
+        Loops over the list of arguments. If the argument is a placeholder, the ``nodes`` dictionary is searched for the
+        same key and if found, the content of that node is processed. The manner in which the content is represented
+        depends on the node type. For a ``SinglefileData``, the content is written to ``dirpath``. The key of the
+        ``nodes`` dictionary is used as the relative filename, unless an explicit filename is defined in ``filenames``
+        with the same key. The placeholder is then replaced with the path of the written file, relative to ``dirpath``.
+        For all other node types, the ``value`` property is called which is cast to a ``str`` and is added as a command
+        line argument by replacing the placeholder.
+
+        After all arguments are processed, any remaining ``SinglefileData`` nodes in ``nodes`` are also written to
+        ``dirpath`` using the same logic for determining the relative filename.
 
         :param dirpath: A temporary folder on the local file system.
-        :param files: A dictionary of ``SinglefileData`` nodes. The content of the nodes is written to ``dirpath`` using
-            the key as the relative filename, unless an explicit filename is defined in ``filenames`` with the same key.
-        :param filenames: A dictionary of explicit filenames to use for the ``files`` to be written to ``dirpath``.
+        :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
+        :param filenames: A dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
         :param arguments: A list of command line arguments optionally containing placeholders for filenames.
         :returns: List of processed command line arguments.
         :raises ValueError: If any argument contains more than one placeholder.
-        :raises ValueError: If ``files`` does not specify a node for a placeholder in ``arguments``.
+        :raises ValueError: If ``nodes`` does not specify a node for a placeholder in ``arguments``.
         """
+        # pylint: disable=too-many-locals
         from string import Formatter
 
         formatter = Formatter()
         processed_arguments = []
-        processed_files = []
+        processed_nodes = []
 
         for argument in arguments:
 
@@ -146,17 +166,23 @@ class ShellJob(CalcJob):
 
             placeholder = field_names[0]
 
-            if placeholder not in files:
-                raise ValueError(f'argument placeholder `{{{placeholder}}}` not specified in `files`.')
+            if placeholder not in nodes:
+                raise ValueError(f'argument placeholder `{{{placeholder}}}` not specified in `nodes`.')
 
-            filename = self.write_single_file_data(dirpath, files[placeholder], placeholder, filenames)
-            argument_interpolated = argument.format(**{placeholder: filename})
+            node = nodes[placeholder]
 
-            processed_files.append(placeholder)
+            if isinstance(node, SinglefileData):
+                filename = self.write_single_file_data(dirpath, nodes[placeholder], placeholder, filenames)
+                argument_interpolated = argument.format(**{placeholder: filename})
+            else:
+                argument_interpolated = argument.format(**{placeholder: str(node.value)})
+
+            processed_nodes.append(placeholder)
             processed_arguments.append(argument_interpolated)
 
-        for key in filter(lambda key: key not in processed_files, files):
-            self.write_single_file_data(dirpath, files[key], key, filenames)
+        for key, node in nodes.items():
+            if key not in processed_nodes and isinstance(node, SinglefileData):
+                self.write_single_file_data(dirpath, node, key, filenames)
 
         return processed_arguments
 

@@ -3,7 +3,7 @@
 import io
 
 from aiida.common.datastructures import CodeInfo
-from aiida.orm import List, SinglefileData
+from aiida.orm import Data, Float, Int, List, SinglefileData, Str
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
@@ -24,11 +24,11 @@ def test_code(generate_calc_job, generate_code):
     assert not list(dirpath.iterdir())
 
 
-def test_files(generate_calc_job, generate_code):
-    """Test the ``files`` input."""
+def test_nodes_single_file_data(generate_calc_job, generate_code):
+    """Test the ``nodes`` input with ``SinglefileData`` nodes ."""
     inputs = {
         'code': generate_code(),
-        'files': {
+        'nodes': {
             'xa': SinglefileData(io.StringIO('content')),
             'xb': SinglefileData(io.StringIO('content')),
         }
@@ -42,11 +42,30 @@ def test_files(generate_calc_job, generate_code):
     assert sorted([p.name for p in dirpath.iterdir()]) == ['xa', 'xb']
 
 
+def test_nodes_base_types(generate_calc_job, generate_code):
+    """Test the ``nodes`` input with ``BaseType`` nodes ."""
+    inputs = {
+        'code': generate_code(),
+        'arguments': ['{float}', '{int}', '{str}'],
+        'nodes': {
+            'float': Float(1.0),
+            'int': Int(2),
+            'str': Str('string'),
+        }
+    }
+    _, calc_info = generate_calc_job('core.shell', inputs)
+    code_info = calc_info.codes_info[0]
+
+    assert code_info.cmdline_params == ['1.0', '2', 'string']
+    assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
+    assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+
+
 def test_filenames(generate_calc_job, generate_code):
     """Test the ``filenames`` input."""
     inputs = {
         'code': generate_code(),
-        'files': {
+        'nodes': {
             'xa': SinglefileData(io.StringIO('content')),
             'xb': SinglefileData(io.StringIO('content')),
         },
@@ -67,7 +86,7 @@ def test_filenames(generate_calc_job, generate_code):
 @pytest.mark.parametrize(
     'arguments, exception', (
         (['{place}{holder}'], r'argument `.*` is invalid as it contains more than one placeholder.'),
-        (['{placeholder}'], r'argument placeholder `.*` not specified in `files`.'),
+        (['{placeholder}'], r'argument placeholder `.*` not specified in `nodes`.'),
     )
 )
 def test_arguments_invalid(generate_calc_job, generate_code, arguments, exception):
@@ -90,12 +109,12 @@ def test_arguments(generate_calc_job, generate_code):
 
 
 def test_arguments_files(generate_calc_job, generate_code):
-    """Test the ``arguments`` with placeholders for files."""
+    """Test the ``arguments`` with placeholders for inputs."""
     arguments = List(['{file_a}'])
     inputs = {
         'code': generate_code(),
         'arguments': arguments,
-        'files': {
+        'nodes': {
             'file_a': SinglefileData(io.StringIO('content'))
         },
     }
@@ -110,7 +129,7 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
     inputs = {
         'code': generate_code(),
         'arguments': arguments,
-        'files': {
+        'nodes': {
             'file_a': SinglefileData(io.StringIO('content'))
         },
         'filenames': {
@@ -133,3 +152,26 @@ def test_validate_outputs(generate_calc_job, generate_code, outputs, message):
     """Test the validator for the ``outputs`` argument."""
     with pytest.raises(ValueError, match=message):
         generate_calc_job('core.shell', {'code': generate_code(), 'outputs': outputs})
+
+
+@pytest.mark.parametrize(
+    'node_cls, message', (
+        (Data, r'.*Unsupported node type for `.*` in `nodes`: .* does not have the `value` property.'),
+        (Int, r'.*Casting `value` to `str` for `.*` in `nodes` excepted: .*'),
+    )
+)
+def test_validate_nodes(generate_calc_job, generate_code, node_cls, message, monkeypatch):
+    """Test the validator for the ``nodes`` argument."""
+    nodes = {'node': node_cls()}
+
+    if node_cls is Int:
+
+        @property
+        def value_raises(self):
+            """Raise an exception."""
+            raise ValueError()
+
+        monkeypatch.setattr(node_cls, 'value', value_raises)
+
+    with pytest.raises(ValueError, match=message):
+        generate_calc_job('core.shell', {'code': generate_code(), 'nodes': nodes})
