@@ -7,8 +7,8 @@ type: software
 authors:
   - given-names: Sebastiaan P.
     family-names: Huber
-    email: TODO
-    affiliation: TODO
+    email: mail@sphuber.net
+    affiliation: École Polytechnique Fédérale de Lausanne
 repository-code: "https://github.com/sphuber/aiida-shell"
 version: 0.2.0
 license: MIT License
