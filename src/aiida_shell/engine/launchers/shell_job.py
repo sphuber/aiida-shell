@@ -10,6 +10,7 @@ import typing as t
 from aiida.common import exceptions
 from aiida.engine import launch
 from aiida.orm import AbstractCode, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
+from aiida.parsers import Parser
 
 from aiida_shell import ShellCode, ShellJob
 
@@ -24,6 +25,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     filenames: dict[str, str] | None = None,
     arguments: list[str] | None = None,
     outputs: list[str] | None = None,
+    parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | None = None,
     metadata: dict[str, t.Any] | None = None,
     submit: bool = False,
 ) -> tuple[dict[str, Data], ProcessNode] | ProcessNode:
@@ -34,6 +36,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
     :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes.
     :param outputs: Optional list of relative filenames that should be captured as outputs.
+    :param parser: Optional callable that can implement custom parsing logic of produced output files.
     :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
     :param submit: Boolean, if ``True`` will submit the job to the daemon and return the ``ProcessNode``.
     :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
@@ -52,6 +55,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
         'filenames': filenames,
         'arguments': arguments,
         'outputs': outputs,
+        'parser': parser,
         'metadata': metadata or {},
     }
 

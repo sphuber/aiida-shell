@@ -123,3 +123,18 @@ def test_submit(submit_and_await):
     assert node.is_finished_ok
     assert isinstance(node.outputs.stdout, SinglefileData)
     assert node.outputs.stdout.get_content()
+
+
+def test_parser():
+    """Test the ``parser`` argument."""
+
+    def parser(self, dirpath):  # pylint: disable=unused-argument
+        from aiida.orm import Str  # pylint: disable=reimported,redefined-outer-name
+        return {'string': Str((dirpath / 'stdout').read_text().strip())}
+
+    value = 'test_string'
+    arguments = [value]
+    results, node = launch_shell_job('echo', arguments=arguments, parser=parser)
+
+    assert node.is_finished_ok
+    assert results['string'] == value
