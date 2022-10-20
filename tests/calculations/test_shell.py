@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=redefined-outer-name
 """Tests for the :mod:`aiida_shell.calculations.shell` module."""
 import io
 import pathlib
@@ -242,3 +243,42 @@ def test_submit_to_daemon(generate_code, submit_and_await):
     node = submit_and_await(builder)
     assert node.is_finished_ok, node.process_state
     assert node.outputs.stdout.get_content().strip() == 'testing'
+
+
+def test_parser(generate_calc_job, generate_code):
+    """Test the ``parser`` input for valid input."""
+
+    def parser(self, dirpath):  # pylint: disable=unused-argument
+        pass
+
+    process = generate_calc_job('core.shell', inputs={'code': generate_code(), 'parser': parser}, return_process=True)
+    assert isinstance(process.inputs.parser, SinglefileData)
+
+
+def test_parser_invalid_not_callable(generate_calc_job, generate_code):
+    """Test the ``parser`` validation when input is not callable."""
+    with pytest.raises(ValueError, match=r'The `parser` is not a callable function: .* is not a callable object'):
+        generate_calc_job('core.shell', inputs={'code': generate_code(), 'parser': 'not-callable'})
+
+
+def test_parser_invalid_signature(generate_calc_job, generate_code):
+    """Test the ``parser`` validation when input is not callable."""
+    with pytest.raises(ValueError, match=r'The `parser` has an invalid function signature, it should be:.*'):
+        generate_calc_job('core.shell', inputs={'code': generate_code(), 'parser': lambda x: x})
+
+
+def test_parser_over_daemon(generate_code, submit_and_await):
+    """Test submitting a ``ShellJob`` with a custom parser over the daemon."""
+    value = 'testing'
+
+    def parser(self, dirpath):  # pylint: disable=unused-argument
+        from aiida.orm import Str  # pylint: disable=reimported
+        return {'string': Str((dirpath / 'stdout').read_text().strip())}
+
+    builder = generate_code('/bin/echo').get_builder()
+    builder.arguments = [value]
+    builder.parser = parser
+
+    node = submit_and_await(builder)
+    assert node.is_finished_ok, (node.exit_status, node.exit_message)
+    assert node.outputs.string == value

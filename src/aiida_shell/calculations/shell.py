@@ -2,6 +2,7 @@
 """Implementation of :class:`aiida.engine.CalcJob` to make it easy to run an arbitrary shell command on a computer."""
 from __future__ import annotations
 
+import inspect
 import pathlib
 import typing as t
 
@@ -9,6 +10,8 @@ from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
 from aiida.orm import Data, Dict, List, SinglefileData, to_aiida_type
+
+from aiida_shell.data import PickledData
 
 __all__ = ('ShellJob',)
 
@@ -34,6 +37,9 @@ class ShellJob(CalcJob):
             'arguments', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_arguments
         )
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
+        spec.input(
+            'parser', valid_type=PickledData, required=False, serializer=PickledData, validator=cls.validate_parser
+        )
         spec.input(
             'metadata.options.filename_stdin',
             valid_type=str,
@@ -65,6 +71,11 @@ class ShellJob(CalcJob):
             message='One or more output files defined in the `outputs` input were not retrieved: {missing_filepaths}.'
         )
         spec.exit_code(
+            310,
+            'ERROR_PARSER_HOOK_EXCEPTED',
+            message='Callable specified in the `parser` input excepted: {exception}.'
+        )
+        spec.exit_code(
             400, 'ERROR_COMMAND_FAILED', message='The command exited with a non-zero status: {status} {stderr}.'
         )
         spec.exit_code(
@@ -72,6 +83,28 @@ class ShellJob(CalcJob):
             'ERROR_STDERR_NOT_EMPTY',
             message='The command exited with a zero status but the stderr was not empty.'
         )
+
+    @classmethod
+    def validate_parser(cls, value: t.Any, _) -> str | None:
+        """Validate the ``parser`` input."""
+        if not value:
+            return None
+
+        try:
+            deserialized_parser = value.load()
+        except ValueError as exception:
+            return f'The parser specified in the `parser` could not be loaded: {exception}.'
+
+        try:
+            signature = inspect.signature(deserialized_parser)
+        except TypeError as exception:
+            return f'The `parser` is not a callable function: {exception}'
+
+        parameters = list(signature.parameters.keys())
+
+        if any(required_parameter not in parameters for required_parameter in ('self', 'dirpath')):
+            correct_signature = '(self, dirpath: pathlib.Path) -> dict[str, Data]:'
+            return f'The `parser` has an invalid function signature, it should be: {correct_signature}'
 
     @classmethod
     def validate_nodes(cls, value: t.Mapping[str, Data], _) -> str | None:

@@ -14,7 +14,7 @@ import pathlib
 import re
 
 from aiida.engine import ExitCode
-from aiida.orm import FolderData, SinglefileData
+from aiida.orm import Data, FolderData, SinglefileData
 from aiida.parsers.parser import Parser
 
 from aiida_shell.calculations.shell import ShellJob
@@ -31,6 +31,12 @@ class ShellParser(Parser):
 
         missing_filepaths = self.parse_custom_outputs(dirpath)
         exit_code = self.parse_default_outputs(dirpath)
+
+        if 'parser' in self.node.inputs:
+            try:
+                self.call_parser_hook(dirpath)
+            except Exception as exception:  # pylint: disable=broad-except
+                return self.exit_codes.ERROR_PARSER_HOOK_EXCEPTED.format(exception=exception)
 
         if missing_filepaths:
             return self.exit_codes.ERROR_OUTPUT_FILEPATHS_MISSING.format(missing_filepaths=', '.join(missing_filepaths))
@@ -113,3 +119,14 @@ class ShellParser(Parser):
                     self.out(self.format_link_label(filepath.name), FolderData(tree=filepath))
 
         return missing_filepaths
+
+    def call_parser_hook(self, dirpath: pathlib.Path):
+        """Execute the ``parser`` custom parser hook that was passed as input to the ``ShellJob``."""
+        unpickled_parser = self.node.inputs.parser.load()
+        results = unpickled_parser(self, dirpath) or {}
+
+        if not isinstance(results, dict) or any(not isinstance(value, Data) for value in results.values()):
+            raise TypeError(f'{unpickled_parser} did not return a dictionary of `Data` nodes but: {results}')
+
+        for key, value in results.items():
+            self.out(key, value)
