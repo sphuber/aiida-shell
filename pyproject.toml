@@ -27,6 +27,7 @@ keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
 dependencies = [
     'aiida-core~=2.1',
+    'dill'
 ]
 
 [project.urls]
@@ -50,6 +51,7 @@ tests = [
 
 [project.entry-points.'aiida.data']
 'core.code.installed.shell' = 'aiida_shell.data.code:ShellCode'
+'core.pickled' = 'aiida_shell.data.pickled:PickledData'
 
 [project.entry-points.'aiida.parsers']
 'core.shell' = 'aiida_shell.parsers.shell:ShellParser'
@@ -91,6 +93,7 @@ check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
+    'dill.*',
     'ruamel.*',
 ]
 ignore_missing_imports = true
