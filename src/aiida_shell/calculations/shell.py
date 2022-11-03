@@ -59,6 +59,11 @@ class ShellJob(CalcJob):
         spec.exit_code(
             400, 'ERROR_COMMAND_FAILED', message='The command exited with a non-zero status: {status} {stderr}.'
         )
+        spec.exit_code(
+            410,
+            'ERROR_STDERR_NOT_EMPTY',
+            message='The command exited with a zero status but the stderr was not empty.'
+        )
 
     @classmethod
     def validate_nodes(cls, value: t.Mapping[str, Data], _) -> str | None:

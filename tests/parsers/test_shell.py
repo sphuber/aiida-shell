@@ -76,6 +76,18 @@ def test_status_invalid(parse_calc_job, create_retrieved_temporary):
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STATUS_INVALID.status
 
 
+def test_stderr(parse_calc_job, create_retrieved_temporary):
+    """Test parser returns ``ERROR_STDERR_NOT_EMPTY`` if the command status is 0 but the stderr file is not empty."""
+    content_stderr = 'some error message'
+    retrieved_temporary = create_retrieved_temporary({ShellJob.FILENAME_STDERR: content_stderr})
+    _, results, calcfunction = parse_calc_job(filepath_retrieved_temporary=retrieved_temporary)
+
+    assert not calcfunction.is_finished_ok, calcfunction.exit_status
+    assert calcfunction.exit_status == ShellJob.exit_codes.ERROR_STDERR_NOT_EMPTY.status
+    assert isinstance(results[ShellJob.FILENAME_STDERR], SinglefileData)
+    assert results[ShellJob.FILENAME_STDERR].get_content() == content_stderr
+
+
 def test_outputs(parse_calc_job, create_retrieved_temporary):
     """Test parsing of the outputs defined by the job."""
     files = {
