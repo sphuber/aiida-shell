@@ -101,3 +101,27 @@ def test_outputs_missing(parse_calc_job, create_retrieved_temporary):
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILES_MISSING.status
+
+
+@pytest.mark.parametrize(('filename', 'link_label'), (
+    ('filename-with-dashes.txt', 'filename_with_dashes_txt'),
+    ('file@@name.txt', 'file_name_txt'),
+))
+def test_outputs_link_labels(parse_calc_job, create_retrieved_temporary, filename, link_label):
+    """Test that filenames are converted into valid link labels.
+
+    Any characters that are non-alphanumeric or underscores should be converted to underscores where consecutive
+    underscores are merged into one.
+    """
+    files = {
+        filename: 'content_a',
+    }
+    inputs = {'outputs': List(list(files.keys()))}
+    retrieved_temporary = create_retrieved_temporary(files)
+    _, results, calcfunction = parse_calc_job(inputs=inputs, filepath_retrieved_temporary=retrieved_temporary)
+
+    assert calcfunction.is_finished_ok
+
+    for content in files.values():
+        assert isinstance(results[link_label], SinglefileData)
+        assert results[link_label].get_content() == content

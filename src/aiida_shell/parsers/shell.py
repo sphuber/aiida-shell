@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import pathlib
+import re
 
 from aiida.engine import ExitCode
 from aiida.orm import SinglefileData
@@ -35,6 +36,21 @@ class ShellParser(Parser):
             return self.exit_codes.ERROR_OUTPUT_FILES_MISSING.format(missing_files=', '.join(missing_output_files))
 
         return exit_code
+
+    @staticmethod
+    def format_link_label(filename: str) -> str:
+        """Format the link label from a given filename.
+
+        Valid link labels can only contain alphanumeric characters and underscores, without consecutive underscores. So
+        all characters that are not alphanumeric or an underscore are converted to underscores, where consecutive
+        underscores are merged into one.
+
+        :param filename: The filename.
+        :returns: The link label.
+        """
+        alphanumeric = re.sub('[^0-9a-zA-Z_]+', '_', filename)
+        link_label = re.sub('_[_]+', '_', alphanumeric)
+        return link_label
 
     def parse_default_outputs(self, dirpath: pathlib.Path) -> ExitCode:
         """Parse the output files that should have been retrieved by default.
@@ -84,16 +100,14 @@ class ShellParser(Parser):
         for filename in self.node.inputs.outputs.get_list():
             if '*' in filename:
                 for globbed in dirpath.glob(filename):
-                    output_key = globbed.name.replace('.', '_')
                     if globbed.exists():
-                        self.out(output_key, SinglefileData(globbed, filename=globbed.name))
+                        self.out(self.format_link_label(globbed.name), SinglefileData(globbed, filename=globbed.name))
                     else:
                         missing_output_files.append(globbed.name)
             else:
-                output_key = filename.replace('.', '_')
                 filepath = dirpath / filename
                 if filepath.exists():
-                    self.out(output_key, SinglefileData(filepath, filename=filename))
+                    self.out(self.format_link_label(filename), SinglefileData(filepath, filename=filename))
                 else:
                     missing_output_files.append(filepath.name)
 
