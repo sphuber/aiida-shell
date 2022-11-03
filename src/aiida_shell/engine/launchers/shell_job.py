@@ -50,7 +50,7 @@ def launch_shell_job(
     try:
         code = load_code(code_label)
     except exceptions.NotExistent:
-        LOGGER.warning('No code exists yet for `%s`, creating it now.', code_label)
+        LOGGER.info('No code exists yet for `%s`, creating it now.', code_label)
         code = Code(  # type: ignore[assignment]
             label=command,
             remote_computer_exec=(computer, executable),
@@ -87,11 +87,11 @@ def prepare_computer(computer: Computer | None = None) -> Computer:
         raise TypeError(f'`metadata.options.computer` should be instance of `Computer` but got: {type(computer)}.')
 
     if computer is None:
-        LOGGER.warning('No computer specified, assuming `localhost`.')
+        LOGGER.info('No computer specified, assuming `localhost`.')
         try:
             computer = load_computer('localhost')
         except exceptions.NotExistent:
-            LOGGER.warning('No `localhost` computer exists yet: creating and configuring the `localhost` computer.')
+            LOGGER.info('No `localhost` computer exists yet: creating and configuring the `localhost` computer.')
             computer = Computer(
                 label='localhost',
                 hostname='localhost',
