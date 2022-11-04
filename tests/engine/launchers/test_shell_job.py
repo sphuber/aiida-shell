@@ -114,3 +114,12 @@ def test_arguments_files():
 
     assert node.is_finished_ok
     assert results['stdout'].get_content().strip() == content.split('\n', maxsplit=1)[0]
+
+
+def test_submit(submit_and_await):
+    """Test the ``submit`` argument."""
+    node = launch_shell_job('date', submit=True)
+    submit_and_await(node)
+    assert node.is_finished_ok
+    assert isinstance(node.outputs.stdout, SinglefileData)
+    assert node.outputs.stdout.get_content()

@@ -175,3 +175,12 @@ def test_validate_nodes(generate_calc_job, generate_code, node_cls, message, mon
 
     with pytest.raises(ValueError, match=message):
         generate_calc_job('core.shell', {'code': generate_code(), 'nodes': nodes})
+
+
+def test_submit_to_daemon(generate_code, submit_and_await):
+    """Test submitting a ``ShellJob`` to the daemon."""
+    builder = generate_code('echo').get_builder()
+    builder.arguments = ['testing']
+    node = submit_and_await(builder)
+    assert node.is_finished_ok, node.process_state
+    assert node.outputs.stdout.get_content().strip() == 'testing'

@@ -8,23 +8,25 @@ import tempfile
 import typing as t
 
 from aiida.common import exceptions
-from aiida.engine import run_get_node
-from aiida.orm import Code, Computer, Data, SinglefileData, load_code, load_computer
-from aiida.plugins import CalculationFactory
+from aiida.engine import launch
+from aiida.orm import Code, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
+
+from aiida_shell.calculations.shell import ShellJob
 
 __all__ = ('launch_shell_job',)
 
 LOGGER = logging.getLogger('aiida_shell')
 
 
-def launch_shell_job(
+def launch_shell_job(  # pylint: disable=too-many-arguments,too-many-locals
     command: str,
     nodes: dict[str, Data] | None = None,
     filenames: dict[str, str] | None = None,
     arguments: list[str] | None = None,
     outputs: list[str] | None = None,
-    metadata: dict[str, t.Any] | None = None
-):  # pylint: disable=too-many-arguments,too-many-locals
+    metadata: dict[str, t.Any] | None = None,
+    submit: bool = False,
+) -> tuple[dict[str, Data], ProcessNode] | ProcessNode:
     """Launch a :class:`aiida_shell.ShellJob` job for the given command.
 
     :param command: The shell command to run. Should be the relative command name, e.g., ``date``.
@@ -33,8 +35,10 @@ def launch_shell_job(
     :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes.
     :param outputs: Optional list of relative filenames that should be captured as outputs.
     :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
+    :param submit: Boolean, if ``True`` will submit the job to the daemon and return the ``ProcessNode``.
     :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
     :raises ValueError: If the absolute path of the command on the computer could not be determined.
+    :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``.
     """
     computer = prepare_computer((metadata or {}).get('options', {}).pop('computer', None))
 
@@ -66,7 +70,10 @@ def launch_shell_job(
         'metadata': metadata or {},
     }
 
-    results, node = run_get_node(CalculationFactory('core.shell'), **inputs)  # type: ignore[arg-type]
+    if submit:
+        return launch.submit(ShellJob, **inputs)
+
+    results, node = launch.run_get_node(ShellJob, **inputs)
 
     return {label: node for label, node in results.items() if isinstance(node, SinglefileData)}, node
 

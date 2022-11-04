@@ -169,3 +169,44 @@ results, node = launch_shell_job(
 print(results['stdout'].get_content())
 ```
 Here you can use `aiida.orm.load_computer` to load the `Computer` instance from its label, PK or UUID.
+
+### Running many shell jobs in parallel
+By default the shell command ran by `launch_shell_job` is run blockingly; meaning that the Python interpreter is blocked from doing anything else until the shell command finishes.
+This becomes inefficient if you need to run many shell commands.
+If the shell commands are independent and can be run in parallel, it is possible to submit the jobs to AiiDA's daemon by setting `submit=True`:
+```python
+from aiida.engine.daemon.client import get_daemon_client
+from aiida_shell import launch_shell_job
+
+# Make sure the daemon is running
+get_daemon_client().start_daemon()
+
+nodes = []
+
+for string in ['string_one', 'string_two']:
+    node = launch_shell_job(
+        'echo',
+        arguments=[string],
+        submit=True,
+    )
+    nodes.append(node)
+    print(f'Submitted {node}')
+```
+Instead of returning a tuple of the results and the node, `launch_shell_job` now only returns the `node`.
+The reason is because the function returns immediately after submitting the job to the daemon at which point it isn't necessarily finished yet.
+To check on the status of the submitted jobs, you can use the `verdi process list` command of the CLI that ships with AiiDA.
+Or you can do it programmatically:
+```python
+import time
+
+while True:
+    if all(node.is_terminated for node in nodes):
+        break
+    time.sleep(1)
+
+for node in nodes:
+    if node.is_finished_ok:
+        print(f'{node} finished successfully')
+    else:
+        print(f'{node} failed')
+```

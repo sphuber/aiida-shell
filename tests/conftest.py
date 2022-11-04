@@ -133,10 +133,17 @@ def generate_computer():
 def generate_code(generate_computer):
     """Return a :class:`aiida.orm.Code` instance, either already existing or created."""
 
-    def factory(computer_label='localhost', label=None, entry_point_name='core.shell', executable='/bin/true'):
+    def factory(command='/bin/true', computer_label='localhost', label=None, entry_point_name='core.shell'):
         """Return a :class:`aiida.orm.Code` instance, either already existing or created."""
         label = label or str(uuid.uuid4())
         computer = generate_computer(computer_label)
+
+        with computer.get_transport() as transport:
+            status, stdout, stderr = transport.exec_command_wait(f'which {command}')
+            executable = stdout.strip()
+
+            if status != 0:
+                raise ValueError(f'failed to determine the absolute path of the command on the computer: {stderr}')
 
         try:
             filters = {'label': label, 'attributes.input_plugin_name': entry_point_name}
