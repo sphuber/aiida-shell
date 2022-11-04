@@ -62,8 +62,9 @@ class ShellParser(Parser):
             with (dirpath / ShellJob.FILENAME_STDERR).open(mode='rb') as handle:
                 node_stderr = SinglefileData(handle, filename=ShellJob.FILENAME_STDERR)
         except FileNotFoundError:
-            pass
+            stderr = ''
         else:
+            stderr = node_stderr.get_content()
             self.out(ShellJob.FILENAME_STDERR, node_stderr)
 
         try:
@@ -82,7 +83,10 @@ class ShellParser(Parser):
             return self.exit_codes.ERROR_OUTPUT_STATUS_INVALID
 
         if exit_status != 0:
-            return self.exit_codes.ERROR_COMMAND_FAILED.format(status=exit_status, stderr=node_stderr.get_content())
+            return self.exit_codes.ERROR_COMMAND_FAILED.format(status=exit_status, stderr=stderr)
+
+        if stderr:
+            return self.exit_codes.ERROR_STDERR_NOT_EMPTY
 
         return ExitCode()
 
