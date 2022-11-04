@@ -84,6 +84,9 @@ class ShellJob(CalcJob):
     @classmethod
     def validate_outputs(cls, value: List, _) -> str | None:
         """Validate the ``outputs`` input."""
+        if not value:
+            return None
+
         for reserved in [cls.FILENAME_STATUS, cls.FILENAME_STDERR, cls.FILENAME_STDOUT]:
             if reserved in value:
                 return f'`{reserved}` is a reserved output filename and cannot be used in `outputs`.'

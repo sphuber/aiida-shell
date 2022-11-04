@@ -47,6 +47,9 @@ tests = [
 [project.entry-points.'aiida.calculations']
 'core.shell' = 'aiida_shell.calculations.shell:ShellJob'
 
+[project.entry-points.'aiida.data']
+'core.code.installed.shell' = 'aiida_shell.data.code:ShellCode'
+
 [project.entry-points.'aiida.parsers']
 'core.shell' = 'aiida_shell.parsers.shell:ShellParser'
 
@@ -109,6 +112,7 @@ disable = [
     'duplicate-code',
     'import-outside-toplevel',
     'inconsistent-return-statements',
+    'too-many-ancestors',
 ]
 
 [tool.yapf]

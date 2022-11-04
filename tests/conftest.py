@@ -11,9 +11,11 @@ from aiida.common.folders import Folder
 from aiida.common.links import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
-from aiida.orm import CalcJobNode, Code, Computer, FolderData
+from aiida.orm import CalcJobNode, Computer, FolderData
 from aiida.plugins import CalculationFactory, ParserFactory
 import pytest
+
+from aiida_shell import ShellCode
 
 pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
 
@@ -135,10 +137,10 @@ def generate_computer():
 
 @pytest.fixture
 def generate_code(generate_computer):
-    """Return a :class:`aiida.orm.Code` instance, either already existing or created."""
+    """Return a :class:`aiida_shell.data.code.ShellCode` instance, either already existing or created."""
 
     def factory(command='/bin/true', computer_label='localhost', label=None, entry_point_name='core.shell'):
-        """Return a :class:`aiida.orm.Code` instance, either already existing or created."""
+        """Return a :class:`aiida_shell.data.code.ShellCode` instance, either already existing or created."""
         label = label or str(uuid.uuid4())
         computer = generate_computer(computer_label)
 
@@ -151,10 +153,14 @@ def generate_code(generate_computer):
 
         try:
             filters = {'label': label, 'attributes.input_plugin_name': entry_point_name}
-            return Code.collection.get(**filters)
+            return ShellCode.collection.get(**filters)
         except exceptions.NotExistent:
-            code = Code(label=label, input_plugin_name=entry_point_name, remote_computer_exec=[computer, executable])
-            return code.store()
+            return ShellCode(
+                label=label,
+                computer=computer,
+                filepath_executable=executable,
+                default_calc_job_plugin=entry_point_name
+            ).store()
 
     return factory
 

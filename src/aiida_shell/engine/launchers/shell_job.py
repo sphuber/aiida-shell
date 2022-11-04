@@ -9,16 +9,16 @@ import typing as t
 
 from aiida.common import exceptions
 from aiida.engine import launch
-from aiida.orm import Code, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
+from aiida.orm import AbstractCode, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
 
-from aiida_shell.calculations.shell import ShellJob
+from aiida_shell import ShellCode, ShellJob
 
 __all__ = ('launch_shell_job',)
 
 LOGGER = logging.getLogger('aiida_shell')
 
 
-def launch_shell_job(  # pylint: disable=too-many-arguments,too-many-locals
+def launch_shell_job(  # pylint: disable=too-many-arguments
     command: str,
     nodes: dict[str, Data] | None = None,
     filenames: dict[str, str] | None = None,
@@ -40,7 +40,36 @@ def launch_shell_job(  # pylint: disable=too-many-arguments,too-many-locals
     :raises ValueError: If the absolute path of the command on the computer could not be determined.
     :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``.
     """
-    computer = prepare_computer((metadata or {}).get('options', {}).pop('computer', None))
+    computer = (metadata or {}).get('options', {}).pop('computer', None)
+    code = prepare_code(command, computer)
+
+    inputs = {
+        'code': code,
+        'nodes': convert_nodes_single_file_data(nodes or {}),
+        'filenames': filenames,
+        'arguments': arguments,
+        'outputs': outputs,
+        'metadata': metadata or {},
+    }
+
+    if submit:
+        return launch.submit(ShellJob, **inputs)
+
+    results, node = launch.run_get_node(ShellJob, **inputs)
+
+    return {label: node for label, node in results.items() if isinstance(node, SinglefileData)}, node
+
+
+def prepare_code(command: str, computer: Computer | None = None) -> AbstractCode:
+    """Prepare a code for the given command and computer.
+
+    This will automatically prepare the computer
+
+    :param command: The command that the code should represent. Can be the relative executable name or absolute path.
+    :param computer: The computer on which the command should be run. If not defined the localhost will be used.
+    :return: A :class:`aiida.orm.nodes.code.abstract.AbstractCode` instance.
+    """
+    computer = prepare_computer(computer)
 
     with computer.get_transport() as transport:
         status, stdout, stderr = transport.exec_command_wait(f'which {command}')
@@ -52,30 +81,14 @@ def launch_shell_job(  # pylint: disable=too-many-arguments,too-many-locals
     code_label = f'{command}@{computer.label}'
 
     try:
-        code = load_code(code_label)
+        code: AbstractCode = load_code(code_label)
     except exceptions.NotExistent:
         LOGGER.info('No code exists yet for `%s`, creating it now.', code_label)
-        code = Code(  # type: ignore[assignment]
-            label=command,
-            remote_computer_exec=(computer, executable),
-            input_plugin_name='core.shell'
+        code = ShellCode(  # type: ignore[assignment]
+            label=command, computer=computer, filepath_executable=executable, default_calc_job_plugin='core.shell'
         ).store()
 
-    inputs = {
-        'code': code,
-        'nodes': convert_nodes_single_file_data(nodes or {}),
-        'filenames': filenames or {},
-        'arguments': arguments or [],
-        'outputs': outputs or [],
-        'metadata': metadata or {},
-    }
-
-    if submit:
-        return launch.submit(ShellJob, **inputs)
-
-    results, node = launch.run_get_node(ShellJob, **inputs)
-
-    return {label: node for label, node in results.items() if isinstance(node, SinglefileData)}, node
+    return code
 
 
 def prepare_computer(computer: Computer | None = None) -> Computer:
