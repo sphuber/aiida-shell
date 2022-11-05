@@ -25,7 +25,7 @@ classifiers = [
 keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
 dependencies = [
-    'aiida-core~=2.0',
+    'aiida-core @ git+https://github.com/aiidateam/aiida-core.git@main',
 ]
 
 [project.urls]
