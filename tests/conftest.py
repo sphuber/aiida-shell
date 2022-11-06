@@ -50,7 +50,7 @@ def generate_calc_job(tmp_path):
     as well as the ``CalcInfo`` instance that it returned.
     """
 
-    def factory(entry_point_name, inputs=None):
+    def factory(entry_point_name, inputs=None, return_process=False):
         """Create a :class:`aiida.engine.CalcJob` instance with the given inputs."""
         manager = get_manager()
         runner = manager.get_runner()
@@ -59,6 +59,10 @@ def generate_calc_job(tmp_path):
         process = instantiate_process(runner, process_class, **inputs or {})
 
         calc_info = process.prepare_for_submission(Folder(tmp_path))
+
+        if return_process:
+            return process
+
         return tmp_path, calc_info
 
     return factory

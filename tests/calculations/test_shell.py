@@ -177,6 +177,15 @@ def test_validate_nodes(generate_calc_job, generate_code, node_cls, message, mon
         generate_calc_job('core.shell', {'code': generate_code(), 'nodes': nodes})
 
 
+def test_build_process_label(generate_calc_job, generate_code):
+    """Test the :meth:`~aiida_shell.calculations.shell_job.ShellJob.build_process_label` method."""
+    computer = 'localhost'
+    executable = '/bin/echo'
+    code = generate_code(executable, computer_label=computer, label='echo')
+    process = generate_calc_job('core.shell', {'code': code}, return_process=True)
+    assert process._build_process_label() == f'ShellJob<{code.full_label}>'  # pylint: disable=protected-access
+
+
 def test_submit_to_daemon(generate_code, submit_and_await):
     """Test submitting a ``ShellJob`` to the daemon."""
     builder = generate_code('echo').get_builder()

@@ -90,6 +90,18 @@ class ShellJob(CalcJob):
 
         return None
 
+    def _build_process_label(self) -> str:
+        """Construct the process label that should be set on ``ProcessNode`` instances for this process class.
+
+        Override the base implementation to include the full label of the ``Code`` which provides more useful info to
+        the user, for example when looking at an overview of submitted processes.
+
+        :returns: The process label to use for ``ProcessNode`` instances.
+        """
+        if self.inputs:
+            return f'ShellJob<{self.inputs.code.full_label}>'
+        return super()._build_process_label()
+
     def prepare_for_submission(self, folder: Folder) -> CalcInfo:
         """Prepare the calculation for submission.
 
