@@ -5,4 +5,4 @@ from .data import ShellCode
 from .engine import launch_shell_job
 from .parsers import ShellParser
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
