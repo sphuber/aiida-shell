@@ -22,9 +22,9 @@ LOGGER = logging.getLogger('aiida_shell')
 
 def launch_shell_job(  # pylint: disable=too-many-arguments
     command: str | AbstractCode,
+    arguments: list[str] | str | None = None,
     nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
     filenames: dict[str, str] | None = None,
-    arguments: list[str] | str | None = None,
     outputs: list[str] | None = None,
     parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | str | None = None,
     metadata: dict[str, t.Any] | None = None,
@@ -35,11 +35,11 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     :param command: The shell command to run. Should be the relative command name, e.g., ``date``. An ``AbstractCode``
         instance will be automatically created for this command if it doesn't already exist. Alternatively, a pre-
         configured ``AbstractCode`` instance can be passed directly.
-    :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
-    :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
     :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes. The
         arguments can also be specified as a single string. In this case, it will be split into separate parameters
         using ``shlex.split``.
+    :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
+    :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
     :param outputs: Optional list of relative filenames that should be captured as outputs.
     :param parser: Optional callable that can implement custom parsing logic of produced output files. Alternatively,
         a complete entry point, i.e. a string of the form ``{entry_point_group}:{entry_point_name}`` pointing to such a
