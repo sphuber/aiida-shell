@@ -153,6 +153,9 @@ print(results['stdout'].get_content())
 ```
 which prints `string a`.
 
+N.B.: one might be tempted to simply define the `arguments` as `['<', '{input}']`, but this won't work as the `<` symbol will be quoted and will be read as a literal command line argument, not as the redirection symbol.
+This is why passing the `<` in the `arguments` input will result in a validation error.
+
 ### Defining output files
 When the shell command is executed, AiiDA captures by default the content written to the stdout and stderr file descriptors.
 The content is wrapped in a `SinglefileData` node and attached to the `ShellJob` with the `stdout` and `stderr` link labels, respectively.

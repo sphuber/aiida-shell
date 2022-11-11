@@ -207,6 +207,20 @@ def test_validate_nodes(generate_calc_job, generate_code, node_cls, message, mon
         generate_calc_job('core.shell', {'code': generate_code(), 'nodes': nodes})
 
 
+@pytest.mark.parametrize(
+    'arguments, message', (
+        (['string', 1], r'.*all elements of the `arguments` input should be strings'),
+        (['string', {input}], r'.*all elements of the `arguments` input should be strings'),
+        (['<', '{filename}'], r'`<` cannot be specified in the `arguments`.*'),
+        (['{filename}', '>'], r'the symbol `>` cannot be specified in the `arguments`.*'),
+    )
+)
+def test_validate_arguments(generate_calc_job, generate_code, arguments, message):
+    """Test the validator for the ``arguments`` argument."""
+    with pytest.raises(ValueError, match=message):
+        generate_calc_job('core.shell', {'code': generate_code(), 'arguments': arguments})
+
+
 def test_build_process_label(generate_calc_job, generate_code):
     """Test the :meth:`~aiida_shell.calculations.shell_job.ShellJob.build_process_label` method."""
     computer = 'localhost'
