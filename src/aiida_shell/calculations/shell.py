@@ -32,6 +32,12 @@ class ShellJob(CalcJob):
         spec.input('filenames', valid_type=Dict, required=False, serializer=to_aiida_type)
         spec.input('arguments', valid_type=List, required=False, serializer=to_aiida_type)
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
+        spec.input(
+            'metadata.options.filename_stdin',
+            valid_type=str,
+            required=False,
+            help='Filename that should be redirected to the shell command using the stdin file descriptor.'
+        )
         spec.inputs['code'].required = True
 
         options = spec.inputs['metadata']['options']  # type: ignore[index]
@@ -123,10 +129,19 @@ class ShellJob(CalcJob):
         filenames = (inputs.get('filenames', None) or Dict()).get_dict()
         arguments = (inputs.get('arguments', None) or List()).get_list()
         outputs = (inputs.get('outputs', None) or List()).get_list()
+        filename_stdin = inputs['metadata']['options'].get('filename_stdin', None)
+
+        processed_arguments = self.process_arguments_and_nodes(dirpath, nodes, filenames, arguments)
+
+        # If an explicit filename for the stdin file descriptor is specified it should not be part of the command line
+        # argument since the scheduler plugin is supposed to take care of this.
+        if filename_stdin and filename_stdin in processed_arguments:
+            processed_arguments.remove(filename_stdin)
 
         code_info = CodeInfo()
         code_info.code_uuid = inputs['code'].uuid
-        code_info.cmdline_params = self.process_arguments_and_nodes(dirpath, nodes, filenames, arguments)
+        code_info.cmdline_params = processed_arguments
+        code_info.stdin_name = filename_stdin
         code_info.stderr_name = self.FILENAME_STDERR
         code_info.stdout_name = self.FILENAME_STDOUT
 

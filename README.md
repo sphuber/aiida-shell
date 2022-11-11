@@ -131,6 +131,28 @@ which prints `1.0 2 string`.
 This example is of course contrived, but when combining it with other components of AiiDA, which typically return outputs of these form, they can be used directly as inputs for `launch_shell_job` without having to convert the values.
 This ensures that provenance is kept.
 
+### Redirecting input file through stdin
+Certain shell commands require input to be passed through the stdin file descriptor.
+This is normally accomplished as follows:
+```bash
+cat < input.txt
+```
+To reproduce this behaviour, the file that should be redirected through stdin can be defined using the `metadata.option.filename_stdin` input:
+```python
+from io import StringIO
+from aiida.orm import SinglefileData
+from aiida_shell import launch_shell_job
+results, node = launch_shell_job(
+    'cat',
+    nodes={
+        'input': SinglefileData(StringIO('string a'))
+    },
+    metadata={'options': {'filename_stdin': 'input'}}
+)
+print(results['stdout'].get_content())
+```
+which prints `string a`.
+
 ### Defining output files
 When the shell command is executed, AiiDA captures by default the content written to the stdout and stderr file descriptors.
 The content is wrapped in a `SinglefileData` node and attached to the `ShellJob` with the `stdout` and `stderr` link labels, respectively.
