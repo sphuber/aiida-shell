@@ -46,6 +46,7 @@ repos:
         files: >-
             (?x)^(
                 src/.*py|
+                tests/*.py|
             )$
 
     -   id: pylint

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the :mod:`aiida_shell.calculations.shell` module."""
 import io
+import pathlib
 
 from aiida.common.datastructures import CodeInfo
 from aiida.orm import Data, Float, Int, List, SinglefileData, Str
@@ -146,6 +147,28 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
     _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
     assert code_info.cmdline_params == ['custom_filename']
+
+
+def test_filename_stdin(generate_calc_job, generate_code, file_regression):
+    """Test the ``metadata.options.filename_stdin`` input."""
+    inputs = {
+        'code': generate_code('cat'),
+        'arguments': List(['{filename}']),
+        'nodes': {
+            'filename': SinglefileData(io.StringIO('content'))
+        },
+        'metadata': {
+            'options': {
+                'filename_stdin': 'filename'
+            }
+        }
+    }
+    tmp_path, calc_info = generate_calc_job('core.shell', inputs, presubmit=True)
+    code_info = calc_info.codes_info[0]
+    assert code_info.stdin_name == 'filename'
+
+    filename_submit_script = ShellJob.spec_metadata['options']['submit_script_filename'].default
+    file_regression.check((pathlib.Path(tmp_path) / filename_submit_script).read_text(), encoding='utf-8')
 
 
 @pytest.mark.parametrize(

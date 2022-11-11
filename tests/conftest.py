@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Module with test fixtures."""
+from __future__ import annotations
+
 import collections
 import pathlib
 import tempfile
+import typing as t
 import uuid
 
 from aiida.common import exceptions
+from aiida.common.datastructures import CalcInfo
 from aiida.common.folders import Folder
 from aiida.common.links import LinkType
+from aiida.engine import CalcJob
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 from aiida.orm import CalcJobNode, Computer, FolderData
@@ -52,15 +57,32 @@ def generate_calc_job(tmp_path):
     as well as the ``CalcInfo`` instance that it returned.
     """
 
-    def factory(entry_point_name, inputs=None, return_process=False):
-        """Create a :class:`aiida.engine.CalcJob` instance with the given inputs."""
+    def factory(
+        entry_point_name: str,
+        inputs: dict[str, t.Any] | None = None,
+        return_process: bool = False,
+        presubmit: bool = False
+    ) -> tuple[pathlib.Path, CalcInfo] | CalcJob:
+        """Create a :class:`aiida.engine.CalcJob` instance with the given inputs.
+
+        :param entry_point_name: The entry point name of the calculation job plugin to run.
+        :param inputs: The dictionary of inputs for the calculation job.
+        :param return_process: Flag, if ``True``, return the constructed ``CalcJob`` instance instead of the tuple of
+            the temporary folder and ``CalcInfo`` instance.
+        :param presubmit: Flag, if ``True``, execute ``CalcJob.presubmit`` instead of ``CalcJob.prepare_for_submission``
+            which ensures that all input files are written, including those by the scheduler plugin, such as the
+            submission script.
+        """
         manager = get_manager()
         runner = manager.get_runner()
 
         process_class = CalculationFactory(entry_point_name)
         process = instantiate_process(runner, process_class, **inputs or {})
 
-        calc_info = process.prepare_for_submission(Folder(tmp_path))
+        if presubmit:
+            calc_info = process.presubmit(Folder(tmp_path))
+        else:
+            calc_info = process.prepare_for_submission(Folder(tmp_path))
 
         if return_process:
             return process
