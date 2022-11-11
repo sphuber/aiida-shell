@@ -30,7 +30,9 @@ class ShellJob(CalcJob):
         super().define(spec)
         spec.input_namespace('nodes', valid_type=Data, required=False, validator=cls.validate_nodes)
         spec.input('filenames', valid_type=Dict, required=False, serializer=to_aiida_type)
-        spec.input('arguments', valid_type=List, required=False, serializer=to_aiida_type)
+        spec.input(
+            'arguments', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_arguments
+        )
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
         spec.input(
             'metadata.options.filename_stdin',
@@ -86,6 +88,24 @@ class ShellJob(CalcJob):
                 return f'Unsupported node type for `{key}` in `nodes`: {cls_name} does not have the `value` property.'
             except Exception as exception:  # pylint: disable=broad-except
                 return f'Casting `value` to `str` for `{key}` in `nodes` excepted: {exception}'
+
+    @classmethod
+    def validate_arguments(cls, value: List, _) -> str | None:
+        """Validate the ``arguments`` input."""
+        if not value:
+            return None
+
+        elements = value.get_list()
+
+        if any(not isinstance(element, str) for element in elements):
+            return 'all elements of the `arguments` input should be strings'
+
+        if '<' in elements:
+            var = 'metadata.options.filename_stdin'
+            return f'`<` cannot be specified in the `arguments`; to redirect a file to stdin, use the `{var}` input.'
+
+        if '>' in elements:
+            return 'the symbol `>` cannot be specified in the `arguments`; stdout is automatically redirected.'
 
     @classmethod
     def validate_outputs(cls, value: List, _) -> str | None:
