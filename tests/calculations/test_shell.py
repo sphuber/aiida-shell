@@ -61,16 +61,23 @@ def test_nodes_base_types(generate_calc_job, generate_code):
     assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
 
 
-def test_filenames(generate_calc_job, generate_code):
-    """Test the ``filenames`` input."""
+def test_nodes_single_file_data_filename(generate_calc_job, generate_code):
+    """Test the selection rules for the filename used for ``SinglefileData`` nodes.
+
+    The filename is determined in the following order:
+
+     * Explicitly defined in ``filenames``,
+     * The ``filename`` property of the ``SinglefileData`` node,
+     * The key of the node in the ``nodes`` inputs dictionary.
+    """
     inputs = {
         'code': generate_code(),
         'nodes': {
-            'xa': SinglefileData(io.StringIO('content')),
+            'xa': SinglefileData(io.StringIO('content'), filename='single_file_a'),
             'xb': SinglefileData(io.StringIO('content')),
+            'xc': SinglefileData(io.StringIO('content')),
         },
         'filenames': {
-            'xa': 'filename_a',
             'xb': 'filename_b',
         }
     }
@@ -80,7 +87,7 @@ def test_filenames(generate_calc_job, generate_code):
     assert code_info.cmdline_params == []
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
     assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
-    assert sorted([p.name for p in dirpath.iterdir()]) == ['filename_a', 'filename_b']
+    assert sorted([p.name for p in dirpath.iterdir()]) == ['filename_b', 'single_file_a', 'xc']
 
 
 @pytest.mark.parametrize(

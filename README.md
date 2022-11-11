@@ -68,7 +68,24 @@ which prints `string astring b`.
 The keys in the `nodes` dictionary can only use alphanumeric characters and underscores.
 The keys will be used as the link label of the file in the provenance graph, and as the filename in the temporary directory in which the shell command will be executed.
 Certain commands may require specific filenames, for example including a file extension, e.g., `filename.txt`, but this cannot be used in the `nodes` arguments.
-To specify explicit filenames that should be used in the running directory, that are different from the keys in the `nodes` argument, use the `filenames` argument:
+To specify explicit filenames that should be used in the running directory, make sure that the `filename` of the `SinglefileData` node is defined.
+If the `SinglefileData.filename` was explicitly set when creating the node, that is the filename used to write the input file to the working directory:
+```python
+from io import StringIO
+from aiida.orm import SinglefileData
+from aiida_shell import launch_shell_job
+results, node = launch_shell_job(
+    'cat',
+    arguments=['{file_a}'],
+    nodes={
+        'file_a': SinglefileData(StringIO('string a'), filename='filename.txt'),
+    }
+)
+print(results['stdout'].get_content())
+```
+which prints `string a`.
+
+If the filename of the `SinglefileData` cannot be controlled, alternatively explicit filenames can be defined using the `filenames` argument:
 ```python
 from io import StringIO
 from aiida.orm import SinglefileData
@@ -86,6 +103,7 @@ results, node = launch_shell_job(
 print(results['stdout'].get_content())
 ```
 which prints `string a`.
+Filenames specified in the `filenames` input will override the filename of the `SinglefileData` nodes.
 
 The output filename can be anything except for `stdout`, `stderr` and `status`, which are reserved filenames.
 

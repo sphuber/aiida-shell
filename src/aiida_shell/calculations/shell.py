@@ -192,7 +192,7 @@ class ShellJob(CalcJob):
             node = nodes[placeholder]
 
             if isinstance(node, SinglefileData):
-                filename = self.write_single_file_data(dirpath, nodes[placeholder], placeholder, filenames)
+                filename = self.write_single_file_data(dirpath, node, placeholder, filenames)
                 argument_interpolated = argument.format(**{placeholder: filename})
             else:
                 argument_interpolated = argument.format(**{placeholder: str(node.value)})
@@ -216,7 +216,8 @@ class ShellJob(CalcJob):
         :param filenames: Mapping that can provide explicit filenames for the given key.
         :returns: The relative filename used to write the content to ``dirpath``.
         """
-        filename = filenames.get(key, key)
+        default_filename = node.filename if node.filename and node.filename != SinglefileData.DEFAULT_FILENAME else key
+        filename = filenames.get(key, default_filename)
         filepath = dirpath / filename
 
         with node.open(mode='rb') as handle:
