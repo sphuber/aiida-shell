@@ -157,7 +157,7 @@ which prints `string a`.
 N.B.: one might be tempted to simply define the `arguments` as `['<', '{input}']`, but this won't work as the `<` symbol will be quoted and will be read as a literal command line argument, not as the redirection symbol.
 This is why passing the `<` in the `arguments` input will result in a validation error.
 
-### Defining output files
+### Defining outputs
 When the shell command is executed, AiiDA captures by default the content written to the stdout and stderr file descriptors.
 The content is wrapped in a `SinglefileData` node and attached to the `ShellJob` with the `stdout` and `stderr` link labels, respectively.
 Any other output files that need to be captured can be defined using the `outputs` keyword argument.
@@ -197,6 +197,35 @@ results, node = launch_shell_job(
 print(results.keys())
 ```
 which prints `dict_keys(['xab', 'xaa', 'xac', 'stderr', 'stdout'])`.
+
+### Defining output folders
+When the command produces a folder with multiple output files, it is also possible to parse this as a single output node, instead of individual outputs for each file.
+If a filepath specified in the `outputs` corresponds to a directory, it is attached as a `FolderData` that contains all its contents, instead of individual `SinglefileData` nodes.
+For example, imagine a compressed tarball `/some/path/archive.tar.gz` that contains the folder `sub_folder` with a number of files in it.
+The following example uncompresses the tarball and captures the uncompressed files in the `sub_folder` directory in the `sub_folder` output node:
+```python
+from io import StringIO
+from aiida.orm import SinglefileData
+from aiida_shell import launch_shell_job
+results, node = launch_shell_job(
+    'tar',
+    arguments=['-zxvf', '{archive}'],
+    nodes={
+        'archive': SinglefileData('/some/path/archive.tar.gz'),
+    },
+    outputs=['sub_folder']
+)
+print(results.keys())
+```
+which prints `dict_keys(['sub_folder', 'stderr', 'stdout'])`.
+The contents of the folder can be retrieved from the node as follows:
+```python
+for filename in results['sub_folder'].list_object_names():
+    content = results['sub_folder'].get_object_content(filename)
+    # or, if a file-like object is preferred to stream the content
+    with results['sub_folder'].open(filename) as handle:
+        content = handle.read()
+```
 
 ### Defining a specific computer
 By default the shell command ran by `launch_shell_job` will be executed on the localhost, i.e., the computer where AiiDA is running.

@@ -89,6 +89,12 @@ module = 'aiida_shell.*'
 follow_imports = 'skip'
 check_untyped_defs = true
 
+[[tool.mypy.overrides]]
+module = [
+    'ruamel.*',
+]
+ignore_missing_imports = true
+
 [tool.pydocstyle]
 ignore = [
     'D104',
@@ -109,7 +115,6 @@ max-line-length = 120
 
 [tool.pylint.messages_control]
 disable = [
-    'bad-continuation',
     'duplicate-code',
     'import-outside-toplevel',
     'inconsistent-return-statements',

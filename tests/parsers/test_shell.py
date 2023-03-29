@@ -2,8 +2,9 @@
 # pylint: disable=redefined-outer-name
 """Tests for the :mod:`aiida_shell.parsers.shell` module."""
 import copy
+import pathlib
 
-from aiida.orm import List, SinglefileData
+from aiida.orm import FolderData, List, SinglefileData
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
@@ -31,7 +32,9 @@ def create_retrieved_temporary(tmp_path):
 
         for filename, content in files.items():
             if content is not None:
-                (tmp_path / filename).write_text(content)
+                filepath = tmp_path / filename
+                filepath.parent.mkdir(parents=True, exist_ok=True)
+                filepath.write_text(content)
 
         return tmp_path
 
@@ -106,13 +109,13 @@ def test_outputs(parse_calc_job, create_retrieved_temporary):
 
 
 def test_outputs_missing(parse_calc_job, create_retrieved_temporary):
-    """Test parser returns ``ERROR_OUTPUT_FILES_MISSING`` if a specified output file was not retrieved."""
+    """Test parser returns ``ERROR_OUTPUT_FILEPATHS_MISSING`` if a specified output file was not retrieved."""
     inputs = {'outputs': List(['filename_a'])}
     retrieved_temporary = create_retrieved_temporary()
     node, _, calcfunction = parse_calc_job(inputs=inputs, filepath_retrieved_temporary=retrieved_temporary)
 
     assert calcfunction.is_failed
-    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILES_MISSING.status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILEPATHS_MISSING.status
 
 
 @pytest.mark.parametrize(('filename', 'link_label'), (
@@ -137,3 +140,23 @@ def test_outputs_link_labels(parse_calc_job, create_retrieved_temporary, filenam
     for content in files.values():
         assert isinstance(results[link_label], SinglefileData)
         assert results[link_label].get_content() == content
+
+
+def test_outputs_directory(parse_calc_job, create_retrieved_temporary):
+    """Test parsing when outputs specify a directory."""
+    files = {
+        'nested/filename_a': 'content_a',
+        'nested/filename_b': 'content_b',
+    }
+    inputs = {'outputs': List(['nested'])}
+    retrieved_temporary = create_retrieved_temporary(files)
+    _, results, calcfunction = parse_calc_job(inputs=inputs, filepath_retrieved_temporary=retrieved_temporary)
+
+    assert calcfunction.is_finished_ok
+
+    node = results['nested']
+    assert isinstance(node, FolderData)
+    assert sorted(node.base.repository.list_object_names()) == ['filename_a', 'filename_b']
+
+    for filename, content in files.items():
+        assert node.base.repository.get_object_content(pathlib.Path(filename).name) == content
