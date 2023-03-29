@@ -61,8 +61,8 @@ class ShellJob(CalcJob):
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING', message='The stdout file was not retrieved.')
         spec.exit_code(
             303,
-            'ERROR_OUTPUT_FILES_MISSING',
-            message='One or more output files defined in the `outputs` input were not retrieved: {missing_files}.'
+            'ERROR_OUTPUT_FILEPATHS_MISSING',
+            message='One or more output files defined in the `outputs` input were not retrieved: {missing_filepaths}.'
         )
         spec.exit_code(
             400, 'ERROR_COMMAND_FAILED', message='The command exited with a non-zero status: {status} {stderr}.'

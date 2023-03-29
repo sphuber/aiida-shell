@@ -38,7 +38,10 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     :param submit: Boolean, if ``True`` will submit the job to the daemon and return the ``ProcessNode``.
     :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
     :raises ValueError: If the absolute path of the command on the computer could not be determined.
-    :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``.
+    :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``. The
+        results dictionary intentionally doesn't include the ``retrieved`` and ``remote_folder`` outputs as they are
+        generated for each ``CalcJob`` and typically are not of interest to a user running ``launch_shell_job``. In
+        order to not confuse them, these nodes are omitted, but they can always be accessed through the node.
     """
     computer = (metadata or {}).get('options', {}).pop('computer', None)
     code = prepare_code(command, computer)
@@ -57,7 +60,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
 
     results, node = launch.run_get_node(ShellJob, **inputs)
 
-    return {label: node for label, node in results.items() if isinstance(node, SinglefileData)}, node
+    return {label: node for label, node in results.items() if label not in ('retrieved', 'remote_folder')}, node
 
 
 def prepare_code(command: str, computer: Computer | None = None) -> AbstractCode:

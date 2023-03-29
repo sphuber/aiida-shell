@@ -14,7 +14,7 @@ import pathlib
 import re
 
 from aiida.engine import ExitCode
-from aiida.orm import SinglefileData
+from aiida.orm import FolderData, SinglefileData
 from aiida.parsers.parser import Parser
 
 from aiida_shell.calculations.shell import ShellJob
@@ -29,11 +29,11 @@ class ShellParser(Parser):
         """Parse the contents of the output files stored in the ``retrieved`` output node."""
         dirpath = pathlib.Path(kwargs['retrieved_temporary_folder'])
 
-        missing_output_files = self.parse_custom_outputs(dirpath)
+        missing_filepaths = self.parse_custom_outputs(dirpath)
         exit_code = self.parse_default_outputs(dirpath)
 
-        if missing_output_files:
-            return self.exit_codes.ERROR_OUTPUT_FILES_MISSING.format(missing_files=', '.join(missing_output_files))
+        if missing_filepaths:
+            return self.exit_codes.ERROR_OUTPUT_FILEPATHS_MISSING.format(missing_filepaths=', '.join(missing_filepaths))
 
         return exit_code
 
@@ -72,8 +72,8 @@ class ShellParser(Parser):
                 node_stdout = SinglefileData(handle, filename=ShellJob.FILENAME_STDOUT)
         except FileNotFoundError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
-        else:
-            self.out(ShellJob.FILENAME_STDOUT, node_stdout)
+
+        self.out(ShellJob.FILENAME_STDOUT, node_stdout)
 
         try:
             exit_status = int((dirpath / ShellJob.FILENAME_STATUS).read_text())
@@ -94,25 +94,22 @@ class ShellParser(Parser):
         """Parse the output files that have been requested through the ``outputs`` input.
 
         :param dirpath: Directory containing the retrieved files.
-        :returns: List of missing output files.
+        :returns: List of missing output filepaths.
         """
         if 'outputs' not in self.node.inputs:
             return []
 
-        missing_output_files = []
+        missing_filepaths = []
 
         for filename in self.node.inputs.outputs.get_list():
-            if '*' in filename:
-                for globbed in dirpath.glob(filename):
-                    if globbed.exists():
-                        self.out(self.format_link_label(globbed.name), SinglefileData(globbed, filename=globbed.name))
-                    else:
-                        missing_output_files.append(globbed.name)
-            else:
-                filepath = dirpath / filename
-                if filepath.exists():
-                    self.out(self.format_link_label(filename), SinglefileData(filepath, filename=filename))
-                else:
-                    missing_output_files.append(filepath.name)
+            for filepath in dirpath.glob(filename) if '*' in filename else (dirpath / filename,):
+                if not filepath.exists():
+                    missing_filepaths.append(filepath.name)
+                    continue
 
-        return missing_output_files
+                if filepath.is_file():
+                    self.out(self.format_link_label(filepath.name), SinglefileData(filepath, filename=filepath.name))
+                else:
+                    self.out(self.format_link_label(filepath.name), FolderData(tree=filepath))
+
+        return missing_filepaths
