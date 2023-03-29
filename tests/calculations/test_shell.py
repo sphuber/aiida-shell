@@ -132,16 +132,21 @@ def test_arguments_files(generate_calc_job, generate_code):
 
 
 def test_arguments_files_filenames(generate_calc_job, generate_code):
-    """Test the ``arguments`` with placeholders for files and explicit filenames."""
+    """Test the ``arguments`` with placeholders for files and explicit filenames.
+
+    Nested directories should be created automatically.
+    """
     arguments = List(['{file_a}'])
     inputs = {
         'code': generate_code(),
         'arguments': arguments,
         'nodes': {
-            'file_a': SinglefileData(io.StringIO('content'))
+            'file_a': SinglefileData(io.StringIO('content')),
+            'file_b': SinglefileData(io.StringIO('content')),
         },
         'filenames': {
-            'file_a': 'custom_filename'
+            'file_a': 'custom_filename',
+            'file_b': 'nested/custom_filename',
         }
     }
     _, calc_info = generate_calc_job('core.shell', inputs)

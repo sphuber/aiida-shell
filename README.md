@@ -104,6 +104,7 @@ print(results['stdout'].get_content())
 ```
 which prints `string a`.
 Filenames specified in the `filenames` input will override the filename of the `SinglefileData` nodes.
+Any parent directories in the filepath, for example `some/nested/path` in the filename `some/nested/path/file.txt`, will be automatically created.
 
 The output filename can be anything except for `stdout`, `stderr` and `status`, which are reserved filenames.
 

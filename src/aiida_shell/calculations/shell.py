@@ -255,6 +255,8 @@ class ShellJob(CalcJob):
         filename = filenames.get(key, default_filename)
         filepath = dirpath / filename
 
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
         with node.open(mode='rb') as handle:
             filepath.write_bytes(handle.read())
 
