@@ -311,3 +311,33 @@ results, node = launch_shell_job(
 print(results['string'].value)
 ```
 which prints `some output`.
+
+**Important:** if the output file that is parsed by the custom parser is not any of the files that are retrieved by default, i.e., `stdout`, `stderr`, `status` and the filenames specified in the `outputs` input, it has to be specified in the `metadata.options.additional_retrieve` input:
+
+```python
+from io import StringIO
+from json import dumps
+from aiida_shell import launch_shell_job
+from aiida.orm import SinglefileData
+
+def parser(self, dirpath):
+    """Parse the content of the ``results.json`` file and return as a ``Dict`` node."""
+    import json
+    from aiida.orm import Dict
+    return {'json': Dict(json.load((dirpath / 'results.json').open()))}
+
+results, node = launch_shell_job(
+    'cat',
+    arguments=['{json}'],
+    nodes={'json': SinglefileData(StringIO(dumps({'a': 1})))},
+    parser=parser,
+    metadata={
+        'options': {
+            'output_filename': 'results.json',
+            'additional_retrieve': ['results.json']
+        }
+    }
+)
+print(results['json'].get_dict())
+```
+which prints `{'a': 1}`.
