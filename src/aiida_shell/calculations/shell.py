@@ -47,6 +47,13 @@ class ShellJob(CalcJob):
             help='Filename that should be redirected to the shell command using the stdin file descriptor.'
         )
         spec.inputs['code'].required = True
+        spec.input(
+            'metadata.options.additional_retrieve',
+            required=False,
+            valid_type=list,
+            help='List of filepaths that are to be retrieved in addition to defaults and those specified in the '
+            '`outputs` input. This is useful if files need to be retrieved for a custom `parser`.'
+        )
 
         options = spec.inputs['metadata']['options']  # type: ignore[index]
         options['parser_name'].default = 'core.shell'  # type: ignore[index]
@@ -183,6 +190,7 @@ class ShellJob(CalcJob):
         arguments = (inputs.get('arguments', None) or List()).get_list()
         outputs = (inputs.get('outputs', None) or List()).get_list()
         filename_stdin = inputs['metadata']['options'].get('filename_stdin', None)
+        retrieve_list = outputs + self.DEFAULT_RETRIEVED_TEMPORARY + (self.node.get_option('additional_retrieve') or [])
 
         processed_arguments = self.process_arguments_and_nodes(dirpath, nodes, filenames, arguments)
 
@@ -196,12 +204,12 @@ class ShellJob(CalcJob):
         code_info.cmdline_params = processed_arguments
         code_info.stdin_name = filename_stdin
         code_info.stderr_name = self.FILENAME_STDERR
-        code_info.stdout_name = self.FILENAME_STDOUT
+        code_info.stdout_name = self.node.get_option('output_filename') or self.FILENAME_STDOUT
 
         calc_info = CalcInfo()
         calc_info.codes_info = [code_info]
         calc_info.append_text = f'echo $? > {self.FILENAME_STATUS}'
-        calc_info.retrieve_temporary_list = outputs + self.DEFAULT_RETRIEVED_TEMPORARY
+        calc_info.retrieve_temporary_list = retrieve_list
 
         return calc_info
 

@@ -73,13 +73,15 @@ class ShellParser(Parser):
             stderr = node_stderr.get_content()
             self.out(ShellJob.FILENAME_STDERR, node_stderr)
 
+        filename_stdout = self.node.get_option('output_filename') or ShellJob.FILENAME_STDOUT
+
         try:
-            with (dirpath / ShellJob.FILENAME_STDOUT).open(mode='rb') as handle:
-                node_stdout = SinglefileData(handle, filename=ShellJob.FILENAME_STDOUT)
+            with (dirpath / filename_stdout).open(mode='rb') as handle:
+                node_stdout = SinglefileData(handle, filename=filename_stdout)
         except FileNotFoundError:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
 
-        self.out(ShellJob.FILENAME_STDOUT, node_stdout)
+        self.out(self.format_link_label(filename_stdout), node_stdout)
 
         try:
             exit_status = int((dirpath / ShellJob.FILENAME_STATUS).read_text())

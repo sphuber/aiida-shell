@@ -2,6 +2,7 @@
 """Tests for the :mod:`aiida_shell.engine.launchers.shell_job` module."""
 import datetime
 import io
+import json
 import pathlib
 
 from aiida.orm import Float, Int, SinglefileData, Str
@@ -138,3 +139,33 @@ def test_parser():
 
     assert node.is_finished_ok
     assert results['string'] == value
+
+
+def test_parser_non_stdout():
+    """Test the ``parser`` argument when parsing a file that is not retrieved by default.
+
+    If the output file is custom and not retrieved by default, the
+    """
+    filename = 'results.json'
+
+    def parser(self, dirpath):  # pylint: disable=unused-argument
+        # pylint: disable=reimported,redefined-outer-name
+        import json
+
+        from aiida.orm import Dict
+        return {'json': Dict(json.load((dirpath / filename).open()))}
+
+    dictionary = {'a': 1}
+    results, node = launch_shell_job(
+        'cat',
+        arguments=['{json}'],
+        nodes={'json': SinglefileData(io.StringIO(json.dumps(dictionary)))},
+        parser=parser,
+        metadata={'options': {
+            'output_filename': filename,
+            'additional_retrieve': [filename]
+        }}
+    )
+
+    assert node.is_finished_ok
+    assert results['json'] == dictionary
