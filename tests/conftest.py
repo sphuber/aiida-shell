@@ -14,6 +14,7 @@ from aiida.common.datastructures import CalcInfo
 from aiida.common.folders import Folder
 from aiida.common.links import LinkType
 from aiida.engine import CalcJob
+from aiida.engine.daemon.client import DaemonClient, DaemonNotRunningException, DaemonTimeoutException
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 from aiida.orm import CalcJobNode, Computer, FolderData
@@ -23,6 +24,30 @@ import pytest
 from aiida_shell import ShellCode
 
 pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
+
+
+@pytest.fixture(scope='session')
+def daemon_client(aiida_profile):
+    """Return a daemon client for the configured test profile for the test session.
+
+    The daemon will be automatically stopped at the end of the test session.
+    """
+    daemon_client = DaemonClient(aiida_profile)
+
+    try:
+        yield daemon_client
+    finally:
+        try:
+            daemon_client.stop_daemon(wait=True)
+        except DaemonNotRunningException:
+            pass
+        # Give an additional grace period by manually waiting for the daemon to be stopped. In certain unit test
+        # scenarios, the built in wait time in ``daemon_client.stop_daemon`` is not sufficient and even though the
+        # daemon is stopped, ``daemon_client.is_daemon_running`` will return false for a little bit longer.
+        daemon_client._await_condition(  # pylint: disable=protected-access
+            lambda: not daemon_client.is_daemon_running,
+            DaemonTimeoutException('The daemon failed to stop.'),
+        )
 
 
 @pytest.fixture
