@@ -7,9 +7,10 @@ Run any shell executable without writing a dedicated plugin or parser.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    installation
+   howto
 
 
 ===========
