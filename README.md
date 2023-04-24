@@ -6,14 +6,6 @@
 AiiDA plugin that makes running shell commands easy.
 Run any shell executable without writing a dedicated plugin or parser.
 
+## Documentation
 
-## Installation
-
-The recommended method of installation is through [`pip`](https://pip.pypa.io/en/stable/):
-
-    pip install aiida-shell
-
-## Requirements
-
-To use `aiida-shell` a configured AiiDA profile is required.
-Please refer to the [documentation of `aiida-core`](https://aiida.readthedocs.io/projects/aiida-core/en/latest/intro/get_started.html) for detailed instructions.
+Please refer to the [online documentation](https://aiida-shell.readthedocs.io/) for a complete guide.

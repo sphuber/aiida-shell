@@ -31,7 +31,10 @@ dependencies = [
 ]
 
 [project.urls]
-Source = 'https://github.com/sphuber/aiida-shell'
+homepage = 'https://github.com/sphuber/aiida-shell'
+documentation = 'https://aiida-shell.readthedocs.io/'
+tracker = 'https://github.com/sphuber/aiida-shell/issues'
+source = 'https://github.com/sphuber/aiida-shell'
 
 [project.optional-dependencies]
 docs = [
