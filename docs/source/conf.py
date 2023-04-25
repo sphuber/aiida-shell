@@ -25,6 +25,7 @@ html_theme_options = {
     'use_edit_page_button': True,
 }
 html_domain_indices = True
+html_logo = 'images/logo-column.png'
 
 # Settings for the `sphinx_copybutton` extension
 copybutton_selector = 'div:not(.no-copy)>div.highlight pre'
