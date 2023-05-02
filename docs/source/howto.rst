@@ -297,7 +297,7 @@ If the shell commands are independent and can be run in parallel, it is possible
     nodes = []
 
     for string in ['string_one', 'string_two']:
-        node = launch_shell_job(
+        results, node = launch_shell_job(
             'echo',
             arguments=[string],
             submit=True,
@@ -305,8 +305,8 @@ If the shell commands are independent and can be run in parallel, it is possible
         nodes.append(node)
         print(f'Submitted {node}')
 
-Instead of returning a tuple of the results and the node, ``launch_shell_job`` now only returns the ``node``.
-The reason is because the function returns immediately after submitting the job to the daemon at which point it isn't necessarily finished yet.
+The results returned by ``launch_shell_job`` will now just be an empty dictionary.
+The reason is because the function returns immediately after submitting the job to the daemon at which point it isn't finished yet and so the results are not yet known.
 To check on the status of the submitted jobs, you can use the ``verdi process list`` command of the CLI that ships with AiiDA.
 Or you can do it programmatically:
 

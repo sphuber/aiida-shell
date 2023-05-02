@@ -97,7 +97,7 @@ def test_files_type(tmp_path, filename):
 def test_files_invalid_type():
     """Test the function raises a ``TypeError`` for an invalid type in ``nodes``."""
     with pytest.raises(TypeError, match=r'received type .* for `filename` in `nodes`.*'):
-        launch_shell_job('cat', nodes={'filename': True})
+        launch_shell_job('cat', nodes={'filename': True})  # type: ignore[dict-item]
 
 
 def test_files_not_exist():
@@ -119,7 +119,7 @@ def test_arguments_files():
 
 def test_submit(submit_and_await):
     """Test the ``submit`` argument."""
-    node = launch_shell_job('date', submit=True)
+    _, node = launch_shell_job('date', submit=True)
     submit_and_await(node)
     assert node.is_finished_ok
     assert isinstance(node.outputs.stdout, SinglefileData)

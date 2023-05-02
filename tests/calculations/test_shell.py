@@ -173,7 +173,8 @@ def test_filename_stdin(generate_calc_job, generate_code, file_regression):
     code_info = calc_info.codes_info[0]
     assert code_info.stdin_name == 'filename'
 
-    filename_submit_script = ShellJob.spec_metadata['options']['submit_script_filename'].default
+    options = ShellJob.spec_metadata['options']
+    filename_submit_script = options['submit_script_filename'].default  # type: ignore[index,union-attr]
     file_regression.check((pathlib.Path(tmp_path) / filename_submit_script).read_text(), encoding='utf-8')
 
 
@@ -202,7 +203,7 @@ def test_validate_nodes(generate_calc_job, generate_code, node_cls, message, mon
 
     if node_cls is Int:
 
-        @property
+        @property  # type: ignore[misc]
         def value_raises(self):
             """Raise an exception."""
             raise ValueError()

@@ -21,14 +21,14 @@ LOGGER = logging.getLogger('aiida_shell')
 
 def launch_shell_job(  # pylint: disable=too-many-arguments
     command: str,
-    nodes: dict[str, Data] | None = None,
+    nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
     filenames: dict[str, str] | None = None,
     arguments: list[str] | None = None,
     outputs: list[str] | None = None,
     parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | None = None,
     metadata: dict[str, t.Any] | None = None,
     submit: bool = False,
-) -> tuple[dict[str, Data], ProcessNode] | ProcessNode:
+) -> tuple[dict[str, Data], ProcessNode]:
     """Launch a :class:`aiida_shell.ShellJob` job for the given command.
 
     :param command: The shell command to run. Should be the relative command name, e.g., ``date``.
@@ -38,7 +38,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     :param outputs: Optional list of relative filenames that should be captured as outputs.
     :param parser: Optional callable that can implement custom parsing logic of produced output files.
     :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
-    :param submit: Boolean, if ``True`` will submit the job to the daemon and return the ``ProcessNode``.
+    :param submit: Boolean, if ``True`` will submit the job to the daemon instead of running in current interpreter.
     :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
     :raises ValueError: If the absolute path of the command on the computer could not be determined.
     :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``. The
@@ -60,7 +60,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     }
 
     if submit:
-        return launch.submit(ShellJob, **inputs)
+        return {}, launch.submit(ShellJob, **inputs)
 
     results, node = launch.run_get_node(ShellJob, **inputs)
 

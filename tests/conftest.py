@@ -101,8 +101,8 @@ def generate_calc_job(tmp_path):
         manager = get_manager()
         runner = manager.get_runner()
 
-        process_class = CalculationFactory(entry_point_name)
-        process = instantiate_process(runner, process_class, **inputs or {})
+        process_class: t.Type['CalcJob'] = CalculationFactory(entry_point_name)  # type: ignore[assignment]
+        process: CalcJob = instantiate_process(runner, process_class, **inputs or {})  # type: ignore[assignment]
 
         if presubmit:
             calc_info = process.presubmit(Folder(tmp_path))
