@@ -7,7 +7,7 @@ import pathlib
 import tempfile
 import typing as t
 
-from aiida.common import exceptions
+from aiida.common import exceptions, lang
 from aiida.engine import launch
 from aiida.orm import AbstractCode, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
 from aiida.parsers import Parser
@@ -20,7 +20,7 @@ LOGGER = logging.getLogger('aiida_shell')
 
 
 def launch_shell_job(  # pylint: disable=too-many-arguments
-    command: str,
+    command: str | AbstractCode,
     nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
     filenames: dict[str, str] | None = None,
     arguments: list[str] | None = None,
@@ -31,7 +31,9 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
 ) -> tuple[dict[str, Data], ProcessNode]:
     """Launch a :class:`aiida_shell.ShellJob` job for the given command.
 
-    :param command: The shell command to run. Should be the relative command name, e.g., ``date``.
+    :param command: The shell command to run. Should be the relative command name, e.g., ``date``. An ``AbstractCode``
+        instance will be automatically created for this command if it doesn't already exist. Alternatively, a pre-
+        configured ``AbstractCode`` instance can be passed directly.
     :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
     :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
     :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes.
@@ -47,7 +49,12 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
         order to not confuse them, these nodes are omitted, but they can always be accessed through the node.
     """
     computer = (metadata or {}).get('options', {}).pop('computer', None)
-    code = prepare_code(command, computer)
+
+    if isinstance(command, str):
+        code = prepare_code(command, computer)
+    else:
+        lang.type_check(command, AbstractCode)
+        code = command
 
     inputs = {
         'code': code,

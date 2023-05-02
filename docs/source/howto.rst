@@ -279,6 +279,23 @@ To specify what computer to use for a shell command, pass it as an option to the
 Here you can use ``aiida.orm.load_computer`` to load the ``Computer`` instance from its label, PK or UUID.
 
 
+Defining a pre-configured code
+==============================
+
+The first argument, ``command``, of ``launch_shell_job`` takes the name of the command to be run as a string.
+Under the hood, this is automatically converted into an :class:`~aiida.orm.nodes.data.code.abstract.AbstractCode`.
+The ``command`` argument also accepts a pre-configured code instance directly:
+
+.. code-block:: python
+
+    from aiida.orm import load_code
+    from aiida_shell import launch_shell_job
+    code = load_code('date@localhost')
+    results, node = launch_shell_job(code)
+
+This approach can be used as an alternative to the previous example where the target computer is specified through the `metadata` argument.
+
+
 Running many shell jobs in parallel
 ===================================
 

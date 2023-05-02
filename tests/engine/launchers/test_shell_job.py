@@ -5,7 +5,7 @@ import io
 import json
 import pathlib
 
-from aiida.orm import Float, Int, SinglefileData, Str
+from aiida.orm import AbstractCode, Float, Int, SinglefileData, Str
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
@@ -34,6 +34,21 @@ def test_default():
     assert node.is_finished_ok
     assert isinstance(results['stdout'], SinglefileData)
     assert results['stdout'].get_content()
+
+
+def test_command(generate_code):
+    """Test the ``command`` argument accepts a pre-configured code instance."""
+    code = generate_code()
+    assert isinstance(code, AbstractCode)
+
+    _, node = launch_shell_job(code)
+    assert node.is_finished_ok
+
+
+def test_command_invalid():
+    """Test the ``command`` argument raises a ``TypeError`` if anything but a ``str`` or ``AbstractCode`` is passed."""
+    with pytest.raises(TypeError, match=r'Got object of type .*, expecting .*'):
+        launch_shell_job(None)  # type: ignore[arg-type]
 
 
 def test_arguments():
