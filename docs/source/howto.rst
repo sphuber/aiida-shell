@@ -23,7 +23,7 @@ Which should print something like ``Thu 17 Mar 2022 10:49:52 PM CET``.
 Running a shell command with arguments
 ======================================
 
-To pass arguments to the shell command, pass them as a list to the ``arguments`` keyword:
+To pass arguments to the shell command, pass them as a string to the ``arguments`` keyword:
 
 
 .. code-block:: python
@@ -31,7 +31,7 @@ To pass arguments to the shell command, pass them as a list to the ``arguments``
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'date',
-        arguments=['--iso-8601']
+        arguments='--iso-8601'
     )
     print(results['stdout'].get_content())
 
@@ -52,7 +52,7 @@ To specify where on the command line the files should be passed, use placeholder
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
-        arguments=['{file_a}', '{file_b}'],
+        arguments='{file_a} {file_b}',
         nodes={
             'file_a': SinglefileData(StringIO('string a')),
             'file_b': SinglefileData(StringIO('string b')),
@@ -79,7 +79,7 @@ If the ``SinglefileData.filename`` was explicitly set when creating the node, th
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
-        arguments=['{file_a}'],
+        arguments='{file_a}',
         nodes={
             'file_a': SinglefileData(StringIO('string a'), filename='filename.txt'),
         }
@@ -97,7 +97,7 @@ If the filename of the ``SinglefileData`` cannot be controlled, alternatively ex
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
-        arguments=['{file_a}'],
+        arguments='{file_a}',
         nodes={
             'file_a': SinglefileData(StringIO('string a')),
         },
@@ -129,7 +129,7 @@ Typical useful examples, are the base types that ship with AiiDA, such as the ``
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'echo',
-        arguments=['{float}', '{int}', '{string}'],
+        arguments='{float} {int} {string}',
         nodes={
             'float': Float(1.0),
             'int': Int(2),
@@ -171,7 +171,7 @@ To reproduce this behaviour, the file that should be redirected through stdin ca
 
 which prints ``string a``.
 
-N.B.: one might be tempted to simply define the ``arguments`` as ``['<', '{input}']``, but this won't work as the ``<`` symbol will be quoted and will be read as a literal command line argument, not as the redirection symbol.
+N.B.: one might be tempted to simply define the ``arguments`` as ``'< {input}'``, but this won't work as the ``<`` symbol will be quoted and will be read as a literal command line argument, not as the redirection symbol.
 This is why passing the ``<`` in the ``arguments`` input will result in a validation error.
 
 
@@ -189,7 +189,7 @@ Any other output files that need to be captured can be defined using the ``outpu
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'sort',
-        arguments=['{input}', '--output', 'sorted'],
+        arguments='{input} --output sorted',
         nodes={
             'input': SinglefileData(StringIO('2\n5\n3')),
         },
@@ -215,7 +215,7 @@ These output files can be captured by specifying the ``outputs`` as ``['x*']``:
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'split',
-        arguments=['-l', '1', '{single_file}'],
+        arguments='-l 1 {single_file}',
         nodes={
             'single_file': SinglefileData(StringIO('line 0\nline 1\nline 2\n')),
         },
@@ -238,7 +238,7 @@ The following example uncompresses the tarball and captures the uncompressed fil
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'tar',
-        arguments=['-zxvf', '{archive}'],
+        arguments='-zxvf {archive}',
         nodes={
             'archive': SinglefileData('/some/path/archive.tar.gz'),
         },
@@ -313,10 +313,10 @@ If the shell commands are independent and can be run in parallel, it is possible
 
     nodes = []
 
-    for string in ['string_one', 'string_two']:
+    for arguments in ['string_one', 'string_two']:
         results, node = launch_shell_job(
             'echo',
-            arguments=[string],
+            arguments=arguments,
             submit=True,
         )
         nodes.append(node)
@@ -343,8 +343,8 @@ Or you can do it programmatically:
             print(f'{node} failed')
 
 
-Custom parsing
-==============
+Custom output parsing
+=====================
 
 By default, all outputs will be parsed into ``SinglefileData`` nodes.
 While convenient not having to define a parser manually, it can also be quite restrictive.
@@ -370,7 +370,7 @@ The following example shows how a custom parser can be implemented:
 
     results, node = launch_shell_job(
         'echo',
-        arguments=['some output'],
+        arguments='some output',
         parser=parser
     )
     print(results['string'].value)
@@ -396,7 +396,7 @@ which prints ``some output``.
 
         results, node = launch_shell_job(
             'cat',
-            arguments=['{json}'],
+            arguments='{json}',
             nodes={'json': SinglefileData(StringIO(dumps({'a': 1})))},
             parser=parser,
             metadata={
