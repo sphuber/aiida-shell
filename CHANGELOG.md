@@ -1,5 +1,47 @@
 # Change log
 
+## `v0.5.0` - 2023-05-03
+
+### Features
+- `launch_shell_job`: Accept string for the `arguments` argument [[a8af91a]](https://github.com/sphuber/aiida-shell/commit/a8af91a5a0005233c3de4669b74bc185892a8126)
+
+    It is now possible to pass the command line arguments for the command as a string, instead of a list of individual arguments:
+    ```python
+    from aiida_shell import launch_shell_job
+    results, node = launch_shell_job(
+        'date',
+        arguments='--iso-8601 --universal',
+    )
+    ```
+
+- `launch_shell_job`: Accept `AbstractCode` for `command` argument [[dacfbd3]](https://github.com/sphuber/aiida-shell/commit/dacfbd3e25e9c0fd05e7d4c033f4ea092e3825fb)
+
+    It is now possible to pass a specific preconfigured code to run, instead of the command's name:
+    ```python
+    from aiida.orm import load_node
+    from aiida_shell import launch_shell_job
+    results, node = launch_shell_job(
+        load_node('date@localhost'),
+        arguments='--iso-8601 --universal',
+    )
+    ```
+
+### Fixes
+- `launch_shell_job`: Fix bug in `submit=True` when used within work chain [[dbeac91]](https://github.com/sphuber/aiida-shell/commit/dbeac9161e24b2abd57f4481ef15b6bea78a8e28)
+
+### Devops
+- Fix `mypy` configuration in `.pre-commit.config.yaml` [[e16ace0]](https://github.com/sphuber/aiida-shell/commit/e16ace018bd14b2112afa70d100bd8190065e2ab)
+- Change PR numbers to commit hash in `CHANGELOG.md` [[71d8f2b]](https://github.com/sphuber/aiida-shell/commit/71d8f2be5a03a2d6eb59b1aaff7e478e0d7e939a)
+- Update version number in `CITATION.cff` [[b3f672c]](https://github.com/sphuber/aiida-shell/commit/b3f672cdae1d6fa611356cae4e0f53fbbd0a63ce)
+- Fix the `daemon_client` fixture (#33) [[30a7c06]](https://github.com/sphuber/aiida-shell/commit/30a7c064b0c542b06ceb06de904534362f94a594)
+
+### Documentation
+- Add skeleton of documentation [[8595c17]](https://github.com/sphuber/aiida-shell/commit/8595c176ae4380d59502c13fdc41624087b30fb5)
+- Add links to docs in `README.md` and `pyproject.toml` [[d987c55]](https://github.com/sphuber/aiida-shell/commit/d987c5515a496fff972d6bddf4aca33ee55adca6)
+- Add logo [[03855fa]](https://github.com/sphuber/aiida-shell/commit/03855faa5a3944fd48f39439be2056d51080ff72)
+- Move examples from `README.md` to how-to guides [[e15fb53]](https://github.com/sphuber/aiida-shell/commit/e15fb53b23163a412de829a7d7fefa5947cb8a03)
+
+
 ## `v0.4.0` - 2023-03-30
 
 ### Features
