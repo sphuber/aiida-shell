@@ -149,6 +149,7 @@ def prepare_computer(computer: Computer | None = None) -> Computer:
             ).store()
             computer.configure(safe_interval=0.)
             computer.set_minimum_job_poll_interval(0.)
+            computer.set_default_mpiprocs_per_machine(1)
 
     default_user = computer.backend.default_user
 

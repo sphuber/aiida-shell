@@ -176,6 +176,7 @@ def generate_computer():
 
         computer.configure(safe_interval=0.)
         computer.set_minimum_job_poll_interval(0.)
+        computer.set_default_mpiprocs_per_machine(1)
 
         return computer
 

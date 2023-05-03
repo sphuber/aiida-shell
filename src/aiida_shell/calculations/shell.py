@@ -57,7 +57,7 @@ class ShellJob(CalcJob):
 
         options = spec.inputs['metadata']['options']  # type: ignore[index]
         options['parser_name'].default = 'core.shell'  # type: ignore[index]
-        options['resources'].default = {'num_machines': 1, 'tot_num_mpiprocs': 1}  # type: ignore[index]
+        options['resources'].default = {'num_machines': 1}  # type: ignore[index]
 
         spec.outputs.dynamic = True
 
