@@ -95,20 +95,22 @@ def prepare_code(command: str, computer: Computer | None = None) -> AbstractCode
     :return: A :class:`aiida.orm.nodes.code.abstract.AbstractCode` instance.
     """
     computer = prepare_computer(computer)
-
-    with computer.get_transport() as transport:
-        status, stdout, stderr = transport.exec_command_wait(f'which {command}')
-        executable = stdout.strip()
-
-        if status != 0:
-            raise ValueError(f'failed to determine the absolute path of the command on the computer: {stderr}')
-
     code_label = f'{command}@{computer.label}'
 
     try:
         code: AbstractCode = load_code(code_label)
-    except exceptions.NotExistent:
+    except exceptions.NotExistent as exception:
         LOGGER.info('No code exists yet for `%s`, creating it now.', code_label)
+
+        with computer.get_transport() as transport:
+            status, stdout, stderr = transport.exec_command_wait(f'which {command}')
+            executable = stdout.strip()
+
+            if status != 0:
+                raise ValueError(
+                    f'failed to determine the absolute path of the command on the computer: {stderr}'
+                ) from exception
+
         code = ShellCode(  # type: ignore[assignment]
             label=command, computer=computer, filepath_executable=executable, default_calc_job_plugin='core.shell'
         ).store()
