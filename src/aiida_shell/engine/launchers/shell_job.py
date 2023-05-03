@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import shlex
 import tempfile
 import typing as t
 
@@ -23,7 +24,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     command: str | AbstractCode,
     nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
     filenames: dict[str, str] | None = None,
-    arguments: list[str] | None = None,
+    arguments: list[str] | str | None = None,
     outputs: list[str] | None = None,
     parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | None = None,
     metadata: dict[str, t.Any] | None = None,
@@ -36,7 +37,9 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
         configured ``AbstractCode`` instance can be passed directly.
     :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
     :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
-    :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes.
+    :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes. The
+        arguments can also be specified as a single string. In this case, it will be split into separate parameters
+        using ``shlex.split``.
     :param outputs: Optional list of relative filenames that should be captured as outputs.
     :param parser: Optional callable that can implement custom parsing logic of produced output files.
     :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
@@ -55,6 +58,11 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     else:
         lang.type_check(command, AbstractCode)
         code = command
+
+    if isinstance(arguments, str):
+        arguments = shlex.split(arguments)
+    else:
+        lang.type_check(arguments, list, allow_none=True)
 
     inputs = {
         'code': code,

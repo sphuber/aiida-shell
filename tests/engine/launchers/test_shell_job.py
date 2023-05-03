@@ -65,6 +65,13 @@ def test_arguments():
     assert results['stdout'].get_content().strip() == datetime.datetime.now().strftime('%Y-%m-%d')
 
 
+def test_arguments_string():
+    """Test that the ``arguments`` argument accepts a string that automatically splits it in a list of arguments."""
+    arguments = '--iso-8601 --universal'
+    _, node = launch_shell_job('date', arguments=arguments)
+    assert node.inputs.arguments.get_list() == ['--iso-8601', '--universal']
+
+
 def test_nodes_single_file_data():
     """Test a shellfunction that specifies positional CLI arguments that are interpolated by the ``kwargs``."""
     content_a = 'content_a'
