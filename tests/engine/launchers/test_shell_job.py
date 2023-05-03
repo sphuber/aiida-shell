@@ -5,11 +5,32 @@ import io
 import json
 import pathlib
 
+from aiida.engine import WorkChain, run_get_node, workfunction
 from aiida.orm import AbstractCode, Float, Int, SinglefileData, Str
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
 from aiida_shell.engine.launchers.shell_job import launch_shell_job
+
+
+class ShellWorkChain(WorkChain):
+    """Implementation of :class:`aiida.engine.processes.workchains.workchain.WorkChain` that submits a ``ShellJob``."""
+
+    @classmethod
+    def define(cls, spec):
+        """Define the process specification."""
+        super().define(spec)
+        spec.outline(cls.run_step, cls.results)
+        spec.output('stdout')
+
+    def run_step(self):
+        """Submit a shell job to the daemon."""
+        _, node = launch_shell_job('date', submit=True)
+        self.to_context(shell_job=node)
+
+    def results(self):
+        """Attach the results."""
+        self.out('stdout', self.ctx.shell_job.outputs.stdout)
 
 
 def test_error_command_not_found():
@@ -146,6 +167,29 @@ def test_submit(submit_and_await):
     assert node.is_finished_ok
     assert isinstance(node.outputs.stdout, SinglefileData)
     assert node.outputs.stdout.get_content()
+
+
+@pytest.mark.usefixtures('started_daemon_client')
+def test_submit_inside_workchain():
+    """Test the ``submit`` argument when used inside a work chain."""
+    results, node = run_get_node(ShellWorkChain)
+    assert node.is_finished_ok, (node.process_state, node.exit_status)
+    assert isinstance(results['stdout'], SinglefileData)
+
+
+@pytest.mark.usefixtures('started_daemon_client')
+def test_submit_inside_workfunction(submit_and_await):
+    """Test the ``submit`` argument when used inside a work function."""
+
+    @workfunction
+    def job_function():
+        _, node = launch_shell_job('date', submit=True)
+        submit_and_await(node)
+        return {'stdout': node.outputs['stdout']}
+
+    results, node = job_function.run_get_node()  # type: ignore[attr-defined]
+    assert node.is_finished_ok, (node.process_state, node.exit_status)
+    assert isinstance(results['stdout'], SinglefileData)
 
 
 def test_parser():

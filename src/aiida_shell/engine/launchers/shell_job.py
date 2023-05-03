@@ -9,7 +9,7 @@ import tempfile
 import typing as t
 
 from aiida.common import exceptions, lang
-from aiida.engine import launch
+from aiida.engine import Process, WorkChain, launch
 from aiida.orm import AbstractCode, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
 from aiida.parsers import Parser
 
@@ -75,6 +75,9 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     }
 
     if submit:
+        current_process = Process.current()
+        if current_process is not None and isinstance(current_process, WorkChain):
+            return {}, current_process.submit(ShellJob, **inputs)
         return {}, launch.submit(ShellJob, **inputs)
 
     results, node = launch.run_get_node(ShellJob, **inputs)
