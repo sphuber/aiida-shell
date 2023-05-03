@@ -1,5 +1,12 @@
 # Change log
 
+## `v0.5.1` - 2023-05-04
+
+### Fixes
+- `ShellJob`: Remove `tot_num_mpiprocs` from `resources` default [[5e61c89]](https://github.com/sphuber/aiida-shell/commit/5e61c891958f705eaf56d8b590227011f16706ef)
+- `launch_shell_job`: Only `which` command if code doesn't already exist [[c1c31ab]](https://github.com/sphuber/aiida-shell/commit/c1c31ab404abcad4778accc8c01c3afbb818dfc8)
+
+
 ## `v0.5.0` - 2023-05-03
 
 ### Features
