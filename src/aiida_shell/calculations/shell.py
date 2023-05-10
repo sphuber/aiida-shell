@@ -41,12 +41,17 @@ class ShellJob(CalcJob):
             'parser', valid_type=PickledData, required=False, serializer=PickledData, validator=cls.validate_parser
         )
         spec.input(
+            'metadata.options.redirect_stderr',
+            valid_type=bool,
+            required=False,
+            help='If set to ``True``, the stderr file descriptor is redirected to stdout.'
+        )
+        spec.input(
             'metadata.options.filename_stdin',
             valid_type=str,
             required=False,
             help='Filename that should be redirected to the shell command using the stdin file descriptor.'
         )
-        spec.inputs['code'].required = True
         spec.input(
             'metadata.options.additional_retrieve',
             required=False,
@@ -54,6 +59,7 @@ class ShellJob(CalcJob):
             help='List of filepaths that are to be retrieved in addition to defaults and those specified in the '
             '`outputs` input. This is useful if files need to be retrieved for a custom `parser`.'
         )
+        spec.inputs['code'].required = True
 
         options = spec.inputs['metadata']['options']  # type: ignore[index]
         options['parser_name'].default = 'core.shell'  # type: ignore[index]
@@ -203,8 +209,12 @@ class ShellJob(CalcJob):
         code_info.code_uuid = inputs['code'].uuid
         code_info.cmdline_params = processed_arguments
         code_info.stdin_name = filename_stdin
-        code_info.stderr_name = self.FILENAME_STDERR
         code_info.stdout_name = self.node.get_option('output_filename') or self.FILENAME_STDOUT
+
+        if self.node.get_option('redirect_stderr'):
+            code_info.join_files = True
+        else:
+            code_info.stderr_name = self.FILENAME_STDERR
 
         calc_info = CalcInfo()
         calc_info.codes_info = [code_info]

@@ -175,6 +175,33 @@ N.B.: one might be tempted to simply define the ``arguments`` as ``'< {input}'``
 This is why passing the ``<`` in the ``arguments`` input will result in a validation error.
 
 
+Redirecting stderr to the stdout file
+=====================================
+
+A common practice when running shell commands is to redirect the content, written to the stderr file descriptor, to stdout.
+This is normally accomplished as follows:
+
+.. code-block:: bash
+
+    date > stdout 2>&1
+
+To reproduce this behaviour, set the ``metadata.option.redirect_stderr`` input to ``True``:
+
+.. code-block:: python
+
+    from aiida_shell import launch_shell_job
+    results, node = launch_shell_job(
+        'date',
+        metadata={'options': {'redirect_stderr': True}}
+    )
+
+If the option is not specified, or set to ``False``, the stderr will be redirected to the file named ``stderr``, as follows:
+
+.. code-block:: bash
+
+    date > stdout 2> stderr
+
+
 Defining outputs
 ================
 

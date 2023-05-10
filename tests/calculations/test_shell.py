@@ -178,6 +178,23 @@ def test_filename_stdin(generate_calc_job, generate_code, file_regression):
     file_regression.check((pathlib.Path(tmp_path) / filename_submit_script).read_text(), encoding='utf-8')
 
 
+@pytest.mark.parametrize('redirect_stderr', (True, False, None))
+def test_redirect_stderr(generate_calc_job, generate_code, redirect_stderr):
+    """Test the ``metadata.options.redirect_stderr`` input."""
+    inputs = {'code': generate_code('cat'), 'metadata': {'options': {}}}
+
+    if redirect_stderr is not None:
+        inputs['metadata']['options']['redirect_stderr'] = redirect_stderr
+
+    _, calc_info = generate_calc_job('core.shell', inputs, presubmit=True)
+    code_info = calc_info.codes_info[0]
+
+    if redirect_stderr is True:
+        assert code_info.join_files == redirect_stderr
+    else:
+        assert code_info.stderr_name == ShellJob.FILENAME_STDERR
+
+
 @pytest.mark.parametrize(
     'outputs, message', (
         ([ShellJob.FILENAME_STATUS], r'`.*` is a reserved output filename and cannot be used in `outputs`.'),
