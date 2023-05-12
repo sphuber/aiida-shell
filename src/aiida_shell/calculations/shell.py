@@ -70,23 +70,32 @@ class ShellJob(CalcJob):
         spec.exit_code(
             300,
             'ERROR_OUTPUT_STATUS_MISSING',
-            message='Exit status could not be determined: exit status file was not retrieved.'
+            message='Exit status could not be determined: exit status file was not retrieved.',
+            invalidates_cache=True,
         )
         spec.exit_code(
             301,
             'ERROR_OUTPUT_STATUS_INVALID',
-            message='Exit status could not be determined: exit status file does not contain a valid integer.'
+            message='Exit status could not be determined: exit status file does not contain a valid integer.',
+            invalidates_cache=True,
         )
-        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING', message='The stdout file was not retrieved.')
+        spec.exit_code(
+            302,
+            'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The stdout file was not retrieved.',
+            invalidates_cache=True,
+        )
         spec.exit_code(
             303,
             'ERROR_OUTPUT_FILEPATHS_MISSING',
-            message='One or more output files defined in the `outputs` input were not retrieved: {missing_filepaths}.'
+            message='One or more output files defined in the `outputs` input were not retrieved: {missing_filepaths}.',
+            invalidates_cache=True,
         )
         spec.exit_code(
             310,
             'ERROR_PARSER_HOOK_EXCEPTED',
-            message='Callable specified in the `parser` input excepted: {exception}.'
+            message='Callable specified in the `parser` input excepted: {exception}.',
+            invalidates_cache=True,
         )
         spec.exit_code(
             400, 'ERROR_COMMAND_FAILED', message='The command exited with a non-zero status: {status} {stderr}.'
