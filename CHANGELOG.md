@@ -1,5 +1,31 @@
 # Change log
 
+## `v0.5.2` - 2023-05-12
+
+### Features
+- `ShellJob`: Add the optional `redirect_stderr` input [[92f726b]](https://github.com/sphuber/aiida-shell/commit/92f726b5fcd631dc4aaa85505869e2dabca9b77c)
+
+    A common practice when running shell commands is to redirect the content, written to the stderr file descriptor, to stdout.
+    This is normally accomplished as follows:
+
+        date > stdout 2>&1
+
+    This behaviour can now be reproduced by setting the ``metadata.options.redirect_stderr`` input to ``True``:
+
+        from aiida_shell import launch_shell_job
+        results, node = launch_shell_job(
+            'date',
+            metadata={'options': {'redirect_stderr': True}}
+        )
+
+### Fixes
+- `ShellJob`: Add `invalidates_cache=True` to exit codes < `400` [[4d405e1]](https://github.com/sphuber/aiida-shell/commit/4d405e168aa46a8e1d878e2e4040cc128cc651fa)
+
+### Devops
+- Add the `py.typed` file following PEP 561 [[680a0e9]](https://github.com/sphuber/aiida-shell/commit/680a0e9e4a8888c6967ce7c3b531da551f210401)
+- Update Python version on RTD to 3.11 [[2cfd4a2]](https://github.com/sphuber/aiida-shell/commit/2cfd4a243cf4db45800e5e84f78acec08fa9844d)
+
+
 ## `v0.5.1` - 2023-05-04
 
 ### Fixes
