@@ -1,5 +1,11 @@
 # Change log
 
+## `v0.5.3` - 2023-06-13
+
+### Features
+- `ShellJob`: Add support for `FolderData` in `nodes` input [[9587c33]](https://github.com/sphuber/aiida-shell/commit/9587c337cd70b2dadb26a723dfa1ad4691570272)
+
+
 ## `v0.5.2` - 2023-05-12
 
 ### Features

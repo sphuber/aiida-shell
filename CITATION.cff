@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 title: aiida-shell
 abstract: AiiDA plugin that makes running shell commands easy.
-date-released: "2023-05-04"
+date-released: "2023-06-13"
 message: Please cite this software using these metadata.
 type: software
 authors:
@@ -10,5 +10,5 @@ authors:
     email: mail@sphuber.net
     affiliation: École Polytechnique Fédérale de Lausanne
 repository-code: "https://github.com/sphuber/aiida-shell"
-version: 0.5.1
+version: 0.5.3
 license: MIT License
