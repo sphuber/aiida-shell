@@ -5,7 +5,7 @@ import io
 import pathlib
 
 from aiida.common.datastructures import CodeInfo
-from aiida.orm import Data, Float, Int, List, SinglefileData, Str
+from aiida.orm import Data, Float, FolderData, Int, List, SinglefileData, Str
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
@@ -42,6 +42,42 @@ def test_nodes_single_file_data(generate_calc_job, generate_code):
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
     assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
     assert sorted([p.name for p in dirpath.iterdir()]) == ['xa', 'xb']
+
+
+def test_nodes_folder_data(generate_calc_job, generate_code, tmp_path):
+    """Test the ``nodes`` input with ``FolderData`` nodes ."""
+    (tmp_path / 'file_a.txt').write_text('content a')
+    (tmp_path / 'file_b.txt').write_text('content b')
+
+    folder_flat = FolderData(tree=tmp_path.absolute())
+    folder_nested = FolderData()
+    folder_nested.base.repository.put_object_from_tree(tmp_path.absolute(), 'dir')
+    inputs = {
+        'code': generate_code(),
+        'arguments': ['{nested}', '{nested_explicit}'],
+        'nodes': {
+            'flat': folder_flat,
+            'nested': folder_nested,
+            'flat_explicit': folder_flat,
+            'nested_explicit': folder_nested,
+        },
+        'filenames': {
+            'flat_explicit': 'sub',
+            'nested_explicit': 'sub'
+        }
+    }
+    dirpath, calc_info = generate_calc_job('core.shell', inputs)
+    code_info = calc_info.codes_info[0]
+
+    assert code_info.cmdline_params == ['nested', 'sub']
+    assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
+    assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert sorted([p.name for p in dirpath.iterdir()]) == ['dir', 'file_a.txt', 'file_b.txt', 'sub']
+    assert sorted([p.name for p in (dirpath / 'dir').iterdir()]) == ['file_a.txt', 'file_b.txt']
+    assert sorted([p.name for p in (dirpath / 'sub').iterdir()]) == ['dir', 'file_a.txt', 'file_b.txt']
+    assert sorted([p.name for p in (dirpath / 'sub' / 'dir').iterdir()]) == ['file_a.txt', 'file_b.txt']
+    assert (dirpath / 'file_a.txt').read_text() == 'content a'
+    assert (dirpath / 'file_b.txt').read_text() == 'content b'
 
 
 def test_nodes_base_types(generate_calc_job, generate_code):

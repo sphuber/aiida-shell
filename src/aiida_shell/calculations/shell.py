@@ -9,7 +9,7 @@ import typing as t
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
-from aiida.orm import Data, Dict, List, SinglefileData, to_aiida_type
+from aiida.orm import Data, Dict, FolderData, List, SinglefileData, to_aiida_type
 
 from aiida_shell.data import PickledData
 
@@ -133,7 +133,7 @@ class ShellJob(CalcJob):
         """Validate the ``nodes`` input."""
         for key, node in value.items():
 
-            if isinstance(node, SinglefileData):
+            if isinstance(node, (FolderData, SinglefileData)):
                 continue
 
             try:
@@ -289,6 +289,9 @@ class ShellJob(CalcJob):
             if isinstance(node, SinglefileData):
                 filename = self.write_single_file_data(dirpath, node, placeholder, filenames)
                 argument_interpolated = argument.format(**{placeholder: filename})
+            elif isinstance(node, FolderData):
+                filename = self.write_folder_data(dirpath, node, placeholder, filenames)
+                argument_interpolated = argument.format(**{placeholder: filename})
             else:
                 argument_interpolated = argument.format(**{placeholder: str(node.value)})
 
@@ -296,8 +299,13 @@ class ShellJob(CalcJob):
             processed_arguments.append(argument_interpolated)
 
         for key, node in nodes.items():
-            if key not in processed_nodes and isinstance(node, SinglefileData):
+            if key in processed_nodes:
+                continue
+
+            if isinstance(node, SinglefileData):
                 self.write_single_file_data(dirpath, node, key, filenames)
+            elif isinstance(node, FolderData):
+                self.write_folder_data(dirpath, node, key, filenames)
 
         return processed_arguments
 
@@ -319,5 +327,27 @@ class ShellJob(CalcJob):
 
         with node.open(mode='rb') as handle:
             filepath.write_bytes(handle.read())
+
+        return filename
+
+    @staticmethod
+    def write_folder_data(dirpath: pathlib.Path, node: FolderData, key: str, filenames: dict[str, str]) -> str:
+        """Write the content of a ``FolderData`` node to ``dirpath``.
+
+        :param dirpath: A temporary folder on the local file system.
+        :param node: The node whose content to write.
+        :param key: The relative filename to use.
+        :param filenames: Mapping that can provide explicit filenames for the given key.
+        :returns: The relative filename used to write the content to ``dirpath``.
+        """
+        if key in filenames:
+            filename = filenames[key]
+            filepath = dirpath / filename
+        else:
+            filename = key
+            filepath = dirpath
+
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        node.base.repository.copy_tree(filepath)
 
         return filename

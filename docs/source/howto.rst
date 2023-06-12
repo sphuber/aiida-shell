@@ -114,6 +114,91 @@ Any parent directories in the filepath, for example ``some/nested/path`` in the 
 The output filename can be anything except for ``stdout``, ``stderr`` and ``status``, which are reserved filenames.
 
 
+Running a shell command with folders as arguments
+=================================================
+
+Certain commands might require the presence of a folder of files in the working directory.
+Just like a file is modeled in AiiDA's provenance graph by a ``SinglefileData`` node, a folder is represented by a ``FolderData`` node.
+The following example shows how a ``FolderData`` can be created to contain multiple files and how it can be passed to ``launch_shell_job`` using the ``nodes`` argument:
+
+.. code-block:: python
+
+    import pathlib
+    import tempfile
+    from aiida.orm import FolderData
+    from aiida_shell import launch_shell_job
+
+    # First create a ``FolderData`` node with some arbitrary files
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dirpath = pathlib.Path(tmpdir)
+        (dirpath / 'file_a.txt').write_text('content a')
+        (dirpath / 'file_b.txt').write_text('content b')
+        folder_data = FolderData(tree=dirpath.absolute())
+
+    results, node = launch_shell_job(
+        'ls',
+        nodes={
+            'directory': folder_data,
+        }
+    )
+    print(results['stdout'].get_content())
+
+which prints:
+
+.. code-block:: console
+
+    _aiidasubmit.sh
+    file_a.txt
+    file_b.txt
+    _scheduler-stderr.txt
+    _scheduler-stdout.txt
+    stderr
+    stdout
+
+The contents of the ``folder_data`` node, the ``file_a.txt`` and ``file_b.txt`` files, were copied to the working directory.
+
+Note that by default, the contents of the ``FolderData`` are copied to the root of the working directory, as shown in the example above.
+If the contents should be written to a directory inside the working directory, use the ``filenames`` argument, as is done for copying ``SinglefileData`` nodes.
+Take for example the ``zip`` command that can create a zip archive from one or many files and folders.
+
+.. code-block:: python
+
+    import pathlib
+    import tempfile
+    from aiida.orm import FolderData
+    from aiida_shell import launch_shell_job
+
+    # First create a ``FolderData`` node with some arbitrary files
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dirpath = pathlib.Path(tmpdir)
+        (dirpath / 'file_a.txt').write_text('content a')
+        (dirpath / 'file_b.txt').write_text('content b')
+        folder_data = FolderData(tree=dirpath.absolute())
+
+    results, node = launch_shell_job(
+        'zip',
+        arguments='-r archive.zip {folder}',
+        outputs=['archive.zip'],
+        nodes={
+            'folder': folder_data,
+        },
+        filenames={
+            'folder': 'directory'
+        }
+    )
+
+In this example, the contents of the ``folder_data`` node were copied to the ``directory`` folder in the working directory.
+The ``results`` dictionary contains the ``archive_zip`` output which is a ``SinglefileData`` node containing the zip archive.
+It can be unzipped as follows: ``verdi node repo cat <IDENTIFIER> | unzip``, where ``<IDENTIFIER>`` should be replaced with the pk or UUID of the ``archive_zip`` node.
+The original files ``file_a.txt`` and ``file_b.txt`` are now written to the current working directory.
+
+.. note::
+
+    It is not required for a ``FolderData`` node, that is specified in the ``nodes`` input, to have a corresponding placeholder in the ``arguments``.
+    Just as with ``SinglefileData`` inputs nodes, if there is no corresponding placeholder, the contents of the folder are simply written to the working directory where the shell command is executed.
+    This is useful for commands that expect a folder to be present in the working directory but whose name is not explicitly defined through a command line argument.
+
+
 Passing other ``Data`` types as input
 =====================================
 
