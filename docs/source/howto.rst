@@ -337,7 +337,10 @@ These output files can be captured by specifying the ``outputs`` as ``['x*']``:
 
 which prints ``dict_keys(['xab', 'xaa', 'xac', 'stderr', 'stdout'])``.
 
-### Defining output folders
+
+Defining output folders
+=======================
+
 When the command produces a folder with multiple output files, it is also possible to parse this as a single output node, instead of individual outputs for each file.
 If a filepath specified in the ``outputs`` corresponds to a directory, it is attached as a ``FolderData`` that contains all its contents, instead of individual ``SinglefileData`` nodes.
 For example, imagine a compressed tarball ``/some/path/archive.tar.gz`` that contains the folder ``sub_folder`` with a number of files in it.
