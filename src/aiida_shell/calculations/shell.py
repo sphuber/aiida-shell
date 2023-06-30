@@ -229,6 +229,7 @@ class ShellJob(CalcJob):
         calc_info.codes_info = [code_info]
         calc_info.append_text = f'echo $? > {self.FILENAME_STATUS}'
         calc_info.retrieve_temporary_list = retrieve_list
+        calc_info.provenance_exclude_list = [p.name for p in dirpath.iterdir()]
 
         return calc_info
 

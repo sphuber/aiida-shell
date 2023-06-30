@@ -41,6 +41,7 @@ def test_nodes_single_file_data(generate_calc_job, generate_code):
     assert code_info.cmdline_params == []
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
     assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert sorted(calc_info.provenance_exclude_list) == ['xa', 'xb']
     assert sorted([p.name for p in dirpath.iterdir()]) == ['xa', 'xb']
 
 
@@ -72,6 +73,7 @@ def test_nodes_folder_data(generate_calc_job, generate_code, tmp_path):
     assert code_info.cmdline_params == ['nested', 'sub']
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
     assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert sorted(calc_info.provenance_exclude_list) == ['dir', 'file_a.txt', 'file_b.txt', 'sub']
     assert sorted([p.name for p in dirpath.iterdir()]) == ['dir', 'file_a.txt', 'file_b.txt', 'sub']
     assert sorted([p.name for p in (dirpath / 'dir').iterdir()]) == ['file_a.txt', 'file_b.txt']
     assert sorted([p.name for p in (dirpath / 'sub').iterdir()]) == ['dir', 'file_a.txt', 'file_b.txt']
