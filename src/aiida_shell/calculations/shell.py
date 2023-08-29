@@ -9,7 +9,7 @@ import typing as t
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
-from aiida.orm import Data, Dict, FolderData, List, SinglefileData, to_aiida_type
+from aiida.orm import Data, Dict, FolderData, List, RemoteData, SinglefileData, to_aiida_type
 
 from aiida_shell.data import PickledData
 
@@ -37,6 +37,9 @@ class ShellJob(CalcJob):
             'arguments', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_arguments
         )
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
+        spec.input(
+            'symlinks', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_symlinks
+        )
         spec.input(
             'parser', valid_type=PickledData, required=False, serializer=PickledData, validator=cls.validate_parser
         )
@@ -107,6 +110,11 @@ class ShellJob(CalcJob):
         )
 
     @classmethod
+    def validate_symlinks(cls, value: t.Any, _) -> str | None:
+        """Validate the ``symlinks`` input."""
+        print(value)
+
+    @classmethod
     def validate_parser(cls, value: t.Any, _) -> str | None:
         """Validate the ``parser`` input."""
         if not value:
@@ -133,7 +141,7 @@ class ShellJob(CalcJob):
         """Validate the ``nodes`` input."""
         for key, node in value.items():
 
-            if isinstance(node, (FolderData, SinglefileData)):
+            if isinstance(node, (FolderData, RemoteData, SinglefileData)):
                 continue
 
             try:
@@ -231,6 +239,16 @@ class ShellJob(CalcJob):
         calc_info.retrieve_temporary_list = retrieve_list
         calc_info.provenance_exclude_list = [p.name for p in dirpath.iterdir()]
 
+        if 'symlinks' in self.inputs:
+            symlinks = self.inputs.symlinks.get_list()
+            remote_symlink_list = []
+            for symlink in symlinks:
+                remote_symlink_list.append((
+                    inputs['code'].computer.uuid,
+                    str(pathlib.Path(nodes[symlink['node']].get_remote_path()) / symlink['source']), symlink['target']
+                ))
+            calc_info.remote_symlink_list = remote_symlink_list
+
         return calc_info
 
     def process_arguments_and_nodes(
@@ -293,6 +311,8 @@ class ShellJob(CalcJob):
             elif isinstance(node, FolderData):
                 filename = self.write_folder_data(dirpath, node, placeholder, filenames)
                 argument_interpolated = argument.format(**{placeholder: filename})
+            elif isinstance(node, RemoteData):
+                print('GOT REMOTEDATA', node)
             else:
                 argument_interpolated = argument.format(**{placeholder: str(node.value)})
 
