@@ -4,9 +4,10 @@ import datetime
 import io
 import json
 import pathlib
+import shutil
 
 from aiida.engine import WorkChain, run_get_node, workfunction
-from aiida.orm import AbstractCode, Float, Int, SinglefileData, Str
+from aiida.orm import AbstractCode, Float, Int, RemoteData, SinglefileData, Str
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
@@ -106,6 +107,57 @@ def test_nodes_single_file_data():
 
     assert node.is_finished_ok
     assert results['stdout'].get_content().strip() == content_a + content_b
+
+
+@pytest.mark.parametrize('use_symlinks', (True, False))
+def test_nodes_remote_data(tmp_path, aiida_localhost, use_symlinks):
+    """Test the ``nodes`` input with ``RemoteData`` nodes.
+
+    The test creates an ``RemoteData`` node containing a zip archive, which is then passed as an input to a shell job
+    that unzips it and registers the file it contains as an output.
+    """
+    dirpath_source = tmp_path / 'source'
+    dirpath_archive = tmp_path / 'archive'
+
+    dirpath_source.mkdir()
+    dirpath_archive.mkdir()
+
+    # Write a dummy file to the ``source`` directory and create an archive of that dir in the ``archive`` directory.
+    (dirpath_source / 'file_a.txt').write_text('content a')
+    shutil.make_archive(dirpath_archive / 'archive', 'zip', dirpath_source)
+
+    # Also create an empty directory and directory containing a file.
+    dirpath_sub_empty = dirpath_archive / 'empty'
+    dirpath_sub_filled = dirpath_archive / 'filled'
+    dirpath_sub_empty.mkdir()
+    dirpath_sub_filled.mkdir()
+    (dirpath_sub_filled / 'file_b.txt').write_text('content b')
+
+    # Create a ``RemoteData`` node of the ``archive`` directory which should contain only the ``archive.zip`` file.
+    remote_data = RemoteData(remote_path=str(dirpath_archive), computer=aiida_localhost)
+
+    results, node = launch_shell_job(
+        'unzip',
+        arguments=['archive.zip'],
+        nodes={'remote': remote_data},
+        outputs=['file_a.txt'],
+        metadata={
+            'options': {
+                'use_symlinks': use_symlinks
+            },
+        },
+    )
+    assert node.is_finished_ok
+    assert results['file_a_txt'].get_content() == 'content a'
+
+    dirpath_working = pathlib.Path(node.outputs.remote_folder.get_remote_path())
+    filepath_archive = dirpath_working / 'archive.zip'
+    assert filepath_archive.is_file()
+    assert filepath_archive.is_symlink() == use_symlinks
+    assert (dirpath_working / 'empty').is_dir()
+    assert (dirpath_working / 'filled').is_dir()
+    assert (dirpath_working / 'filled' / 'file_b.txt').is_file()
+    assert (dirpath_working / 'filled' / 'file_b.txt').read_text() == 'content b'
 
 
 def test_nodes_base_types():

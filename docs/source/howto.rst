@@ -199,6 +199,63 @@ The original files ``file_a.txt`` and ``file_b.txt`` are now written to the curr
     This is useful for commands that expect a folder to be present in the working directory but whose name is not explicitly defined through a command line argument.
 
 
+Running a shell command with remote data
+========================================
+
+Data that is stored on a remote computing resource, which is configured in AiiDA as a ``Computer``, can be represented in the provenance graph as a ``RemoteData`` node.
+This can be useful if a job needs data that is already present on the computer where the job is to run.
+AiiDA can simply make the remote data available in the working directory of the job without copying it through the local machine, which would be costly for large data.
+
+For the purpose of an example, imagine there is a zip archive on a remote computer that needs to be unzipped.
+In the following, the remote computer is actually the localhost to keep the example generic, but the concept applies to any ``Computer``:
+
+.. code-block:: python
+
+    import pathlib
+    import shutil
+    from aiida.orm import RemoteData, load_computer
+    from aiida_shell import launch_shell_job
+
+    # Create a temporary folder with the subdirectories ``archive`` and ``content``.
+    dirpath = pathlib.Path.cwd() / 'tmp_folder'
+    dirpath_archive = dirpath / 'archive'
+    dirpath_content = dirpath / 'content'
+    dirpath_archive.mkdir(parents=True)
+    dirpath_content.mkdir(parents=True)
+
+    # Write a dummy file ``content/file.txt`` and create an archive of the ``content`` dir as ``archive/archive.zip``.
+    (dirpath_content / 'file.txt').write_text('content')
+    shutil.make_archive((dirpath_archive / 'archive'), 'zip', dirpath_content)
+
+    # Create a ``RemoteData`` node that points to the ``archive`` directory on the localhost.
+    localhost = load_computer('localhost')
+    remote_data = RemoteData(computer=localhost, remote_path=str(dirpath_archive.absolute()))
+
+    results, node = launch_shell_job(
+        'unzip',
+        arguments='archive.zip',
+        nodes={
+            'remote_data': remote_data,
+        },
+        outputs=['file.txt']
+    )
+    print(results['file_txt'].get_content())
+
+which prints ``content``.
+
+.. tip::
+    By default, the contents of the ``RemoteData`` nodes are *copied* to the working directory.
+    This may be undesirable for large data, in which case the metadata option ``use_symlinks`` can be set to ``True`` to symlink the contents instead of copy it.
+
+Any number of ``RemoteData`` nodes can be specified in the ``nodes`` input.
+The entire content of each node will be recursively copied to the working directory.
+It is currently not possible to select only parts of a ``RemoteData`` to be copied or to have it copied with a different filename to the working directory.
+
+.. warning::
+    If multiple ``RemoteData`` input nodes contain files with the same name, these files will be overwritten without warning.
+    The same goes if the files overlap with any other files present in the job's working directory.
+
+
 Passing other ``Data`` types as input
 =====================================
 

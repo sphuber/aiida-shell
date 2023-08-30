@@ -38,9 +38,6 @@ class ShellJob(CalcJob):
         )
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
         spec.input(
-            'symlinks', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_symlinks
-        )
-        spec.input(
             'parser', valid_type=PickledData, required=False, serializer=PickledData, validator=cls.validate_parser
         )
         spec.input(
@@ -61,6 +58,13 @@ class ShellJob(CalcJob):
             valid_type=list,
             help='List of filepaths that are to be retrieved in addition to defaults and those specified in the '
             '`outputs` input. This is useful if files need to be retrieved for a custom `parser`.'
+        )
+        spec.input(
+            'metadata.options.use_symlinks',
+            default=False,
+            valid_type=bool,
+            help='When set to `True`, symlinks will be used for contents of `RemoteData` nodes in the `nodes` input as '
+            'opposed to copying the contents to the working directory.'
         )
         spec.inputs['code'].required = True
 
@@ -108,11 +112,6 @@ class ShellJob(CalcJob):
             'ERROR_STDERR_NOT_EMPTY',
             message='The command exited with a zero status but the stderr was not empty.'
         )
-
-    @classmethod
-    def validate_symlinks(cls, value: t.Any, _) -> str | None:
-        """Validate the ``symlinks`` input."""
-        print(value)
 
     @classmethod
     def validate_parser(cls, value: t.Any, _) -> str | None:
@@ -222,6 +221,8 @@ class ShellJob(CalcJob):
         if filename_stdin and filename_stdin in processed_arguments:
             processed_arguments.remove(filename_stdin)
 
+        remote_copy_list, remote_symlink_list = self.handle_remote_data_nodes(inputs)
+
         code_info = CodeInfo()
         code_info.code_uuid = inputs['code'].uuid
         code_info.cmdline_params = processed_arguments
@@ -236,20 +237,29 @@ class ShellJob(CalcJob):
         calc_info = CalcInfo()
         calc_info.codes_info = [code_info]
         calc_info.append_text = f'echo $? > {self.FILENAME_STATUS}'
+        calc_info.remote_copy_list = remote_copy_list
+        calc_info.remote_symlink_list = remote_symlink_list
         calc_info.retrieve_temporary_list = retrieve_list
         calc_info.provenance_exclude_list = [p.name for p in dirpath.iterdir()]
 
-        if 'symlinks' in self.inputs:
-            symlinks = self.inputs.symlinks.get_list()
-            remote_symlink_list = []
-            for symlink in symlinks:
-                remote_symlink_list.append((
-                    inputs['code'].computer.uuid,
-                    str(pathlib.Path(nodes[symlink['node']].get_remote_path()) / symlink['source']), symlink['target']
-                ))
-            calc_info.remote_symlink_list = remote_symlink_list
-
         return calc_info
+
+    @staticmethod
+    def handle_remote_data_nodes(inputs: dict[str, Data]) -> tuple[list, list]:
+        """Handle a ``RemoteData`` that was passed in the ``nodes`` input.
+
+        :param inputs: The inputs dictionary.
+        :returns: A tuple of two lists, the ``remote_copy_list`` and the ``remote_symlink_list``.
+        """
+        use_symlinks: bool = inputs['metadata']['options']['use_symlinks']  # type: ignore[index]
+        computer_uuid = inputs['code'].computer.uuid  # type: ignore[union-attr]
+        remote_nodes = [node for node in inputs.get('nodes', {}).values() if isinstance(node, RemoteData)]
+        instructions = [(computer_uuid, f'{node.get_remote_path()}/*', '.') for node in remote_nodes]
+
+        if use_symlinks:
+            return [], instructions
+
+        return instructions, []
 
     def process_arguments_and_nodes(
         self, dirpath: pathlib.Path, nodes: dict[str, SinglefileData], filenames: dict[str, str], arguments: list[str]
@@ -312,7 +322,7 @@ class ShellJob(CalcJob):
                 filename = self.write_folder_data(dirpath, node, placeholder, filenames)
                 argument_interpolated = argument.format(**{placeholder: filename})
             elif isinstance(node, RemoteData):
-                print('GOT REMOTEDATA', node)
+                self.handle_remote_data(node)
             else:
                 argument_interpolated = argument.format(**{placeholder: str(node.value)})
 
