@@ -9,7 +9,7 @@ project = 'aiida-shell'
 copyright = 'Sebastiaan P. Huber 2022 - 2023'
 release = aiida_shell.__version__
 
-extensions = ['sphinx_copybutton', 'sphinx_click', 'sphinx.ext.intersphinx']
+extensions = ['myst_parser', 'sphinx_copybutton', 'sphinx_click', 'sphinx.ext.intersphinx']
 
 html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
