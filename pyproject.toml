@@ -60,6 +60,7 @@ tests = [
 
 [project.entry-points.'aiida.data']
 'core.code.installed.shell' = 'aiida_shell.data.code:ShellCode'
+'core.entry_point' = 'aiida_shell.data.entry_point:EntryPointData'
 'core.pickled' = 'aiida_shell.data.pickled:PickledData'
 
 [project.entry-points.'aiida.parsers']
