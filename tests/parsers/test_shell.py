@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the :mod:`aiida_shell.parsers.shell` module."""
 import copy
 import pathlib
 
-from aiida.orm import FolderData, List, SinglefileData
 import pytest
-
+from aiida.orm import FolderData, List, SinglefileData
 from aiida_shell.calculations.shell import ShellJob
 
 
@@ -118,10 +115,13 @@ def test_outputs_missing(parse_calc_job, create_retrieved_temporary):
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILEPATHS_MISSING.status
 
 
-@pytest.mark.parametrize(('filename', 'link_label'), (
-    ('filename-with-dashes.txt', 'filename_with_dashes_txt'),
-    ('file@@name.txt', 'file_name_txt'),
-))
+@pytest.mark.parametrize(
+    ('filename', 'link_label'),
+    (
+        ('filename-with-dashes.txt', 'filename_with_dashes_txt'),
+        ('file@@name.txt', 'file_name_txt'),
+    ),
+)
 def test_outputs_link_labels(parse_calc_job, create_retrieved_temporary, filename, link_label):
     """Test that filenames are converted into valid link labels.
 

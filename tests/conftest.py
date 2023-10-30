@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Module with test fixtures."""
 from __future__ import annotations
 
@@ -9,6 +7,7 @@ import tempfile
 import typing as t
 import uuid
 
+import pytest
 from aiida.common import exceptions
 from aiida.common.datastructures import CalcInfo
 from aiida.common.folders import Folder
@@ -19,11 +18,9 @@ from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 from aiida.orm import CalcJobNode, Computer, FolderData
 from aiida.plugins import CalculationFactory, ParserFactory
-import pytest
-
 from aiida_shell import ShellCode
 
-pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
+pytest_plugins = ['aiida.manage.tests.pytest_fixtures']
 
 
 @pytest.fixture(scope='session')
@@ -44,7 +41,7 @@ def daemon_client(aiida_profile):
         # Give an additional grace period by manually waiting for the daemon to be stopped. In certain unit test
         # scenarios, the built in wait time in ``daemon_client.stop_daemon`` is not sufficient and even though the
         # daemon is stopped, ``daemon_client.is_daemon_running`` will return false for a little bit longer.
-        daemon_client._await_condition(  # pylint: disable=protected-access
+        daemon_client._await_condition(
             lambda: not daemon_client.is_daemon_running,
             DaemonTimeoutException('The daemon failed to stop.'),
         )
@@ -86,7 +83,7 @@ def generate_calc_job(tmp_path):
         entry_point_name: str,
         inputs: dict[str, t.Any] | None = None,
         return_process: bool = False,
-        presubmit: bool = False
+        presubmit: bool = False,
     ) -> tuple[pathlib.Path, CalcInfo] | CalcJob:
         """Create a :class:`aiida.engine.CalcJob` instance with the given inputs.
 
@@ -131,7 +128,7 @@ def generate_calc_job_node(generate_computer):
                 flat_inputs.append((prefix + key, value))
         return flat_inputs
 
-    def factory(filepath_retrieved: pathlib.Path = None, inputs: dict = None):
+    def factory(filepath_retrieved: pathlib.Path | None = None, inputs: dict | None = None):
         """Create and return a :class:`aiida.orm.CalcJobNode` instance."""
         node = CalcJobNode(computer=generate_computer(), process_type='aiida.calculations:core.shell')
         node.set_retrieve_list(['stdout'])
@@ -174,8 +171,8 @@ def generate_computer():
                 workdir=tempfile.gettempdir(),
             ).store()
 
-        computer.configure(safe_interval=0.)
-        computer.set_minimum_job_poll_interval(0.)
+        computer.configure(safe_interval=0.0)
+        computer.set_minimum_job_poll_interval(0.0)
         computer.set_default_mpiprocs_per_machine(1)
 
         return computer
@@ -204,10 +201,7 @@ def generate_code(generate_computer):
             return ShellCode.collection.get(**filters)
         except exceptions.NotExistent:
             return ShellCode(
-                label=label,
-                computer=computer,
-                filepath_executable=executable,
-                default_calc_job_plugin=entry_point_name
+                label=label, computer=computer, filepath_executable=executable, default_calc_job_plugin=entry_point_name
             ).store()
 
     return factory

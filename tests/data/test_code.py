@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for :mod:`aiida_shell.data.code`."""
 import pytest
-
 from aiida_shell.data.code import ShellCode
 
 
@@ -27,10 +25,13 @@ def test_constructor_invalid(generate_computer):
         )
 
 
-@pytest.mark.parametrize(('value', 'exception'), (
-    ('core.shell', None),
-    ('core.arithmetic.add', r'`default_calc_job_plugin` has to be `core.shell`, but got: .*'),
-))
+@pytest.mark.parametrize(
+    ('value', 'exception'),
+    (
+        ('core.shell', None),
+        ('core.arithmetic.add', r'`default_calc_job_plugin` has to be `core.shell`, but got: .*'),
+    ),
+)
 def test_validate_default_calc_job_plugin(value, exception):
     """Test the constructor raises if ``default_calc_job_plugin`` is not ``core.shell``."""
     if exception:

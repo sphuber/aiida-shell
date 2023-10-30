@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for the :mod:`aiida_shell.data.pickled` module."""
-from aiida.orm import Node, load_node
 import dill
 import pytest
-
+from aiida.orm import Node, load_node
 from aiida_shell.data.pickled import PickledData
 
 

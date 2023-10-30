@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Implementation of :class:`aiida.engine.CalcJob` to make it easy to run an arbitrary shell command on a computer."""
 from __future__ import annotations
 
@@ -22,7 +21,7 @@ class ShellJob(CalcJob):
     FILENAME_STATUS: str = 'status'
     FILENAME_STDERR: str = 'stderr'
     FILENAME_STDOUT: str = 'stdout'
-    DEFAULT_RETRIEVED_TEMPORARY: list[str] = [FILENAME_STATUS, FILENAME_STDERR, FILENAME_STDOUT]
+    DEFAULT_RETRIEVED_TEMPORARY: tuple[str, ...] = (FILENAME_STATUS, FILENAME_STDERR, FILENAME_STDOUT)
 
     @classmethod
     def define(cls, spec: CalcJobProcessSpec):  # type: ignore[override]
@@ -42,33 +41,33 @@ class ShellJob(CalcJob):
             valid_type=(EntryPointData, PickledData),
             required=False,
             serializer=cls.serialize_parser,
-            validator=cls.validate_parser
+            validator=cls.validate_parser,
         )
         spec.input(
             'metadata.options.redirect_stderr',
             valid_type=bool,
             required=False,
-            help='If set to ``True``, the stderr file descriptor is redirected to stdout.'
+            help='If set to ``True``, the stderr file descriptor is redirected to stdout.',
         )
         spec.input(
             'metadata.options.filename_stdin',
             valid_type=str,
             required=False,
-            help='Filename that should be redirected to the shell command using the stdin file descriptor.'
+            help='Filename that should be redirected to the shell command using the stdin file descriptor.',
         )
         spec.input(
             'metadata.options.additional_retrieve',
             required=False,
             valid_type=list,
             help='List of filepaths that are to be retrieved in addition to defaults and those specified in the '
-            '`outputs` input. This is useful if files need to be retrieved for a custom `parser`.'
+            '`outputs` input. This is useful if files need to be retrieved for a custom `parser`.',
         )
         spec.input(
             'metadata.options.use_symlinks',
             default=False,
             valid_type=bool,
             help='When set to `True`, symlinks will be used for contents of `RemoteData` nodes in the `nodes` input as '
-            'opposed to copying the contents to the working directory.'
+            'opposed to copying the contents to the working directory.',
         )
         spec.inputs['code'].required = True
 
@@ -112,9 +111,7 @@ class ShellJob(CalcJob):
             400, 'ERROR_COMMAND_FAILED', message='The command exited with a non-zero status: {status} {stderr}.'
         )
         spec.exit_code(
-            410,
-            'ERROR_STDERR_NOT_EMPTY',
-            message='The command exited with a zero status but the stderr was not empty.'
+            410, 'ERROR_STDERR_NOT_EMPTY', message='The command exited with a zero status but the stderr was not empty.'
         )
 
     @classmethod
@@ -129,6 +126,7 @@ class ShellJob(CalcJob):
 
         if isinstance(value, str):
             from aiida.plugins.entry_point import get_entry_point_from_string
+
             entry_point = get_entry_point_from_string(value)
             return EntryPointData(entry_point=entry_point)
 
@@ -160,7 +158,6 @@ class ShellJob(CalcJob):
     def validate_nodes(cls, value: t.Mapping[str, Data], _) -> str | None:
         """Validate the ``nodes`` input."""
         for key, node in value.items():
-
             if isinstance(node, (FolderData, RemoteData, SinglefileData)):
                 continue
 
@@ -169,7 +166,7 @@ class ShellJob(CalcJob):
             except AttributeError:
                 cls_name = node.__class__.__name__
                 return f'Unsupported node type for `{key}` in `nodes`: {cls_name} does not have the `value` property.'
-            except Exception as exception:  # pylint: disable=broad-except
+            except Exception as exception:
                 return f'Casting `value` to `str` for `{key}` in `nodes` excepted: {exception}'
 
     @classmethod
@@ -220,7 +217,7 @@ class ShellJob(CalcJob):
         :param folder: A temporary folder on the local file system.
         :returns: A :class:`aiida.common.datastructures.CalcInfo` instance.
         """
-        dirpath = pathlib.Path(folder._abspath)  # pylint: disable=protected-access
+        dirpath = pathlib.Path(folder._abspath)
         inputs: dict[str, t.Any]
 
         if self.inputs:
@@ -233,7 +230,9 @@ class ShellJob(CalcJob):
         arguments = (inputs.get('arguments', None) or List()).get_list()
         outputs = (inputs.get('outputs', None) or List()).get_list()
         filename_stdin = inputs['metadata']['options'].get('filename_stdin', None)
-        retrieve_list = outputs + self.DEFAULT_RETRIEVED_TEMPORARY + (self.node.get_option('additional_retrieve') or [])
+        retrieve_list = (
+            outputs + list(self.DEFAULT_RETRIEVED_TEMPORARY) + (self.node.get_option('additional_retrieve') or [])
+        )
 
         processed_arguments = self.process_arguments_and_nodes(dirpath, nodes, filenames, arguments)
 
@@ -306,7 +305,6 @@ class ShellJob(CalcJob):
         :raises ValueError: If any argument contains more than one placeholder.
         :raises ValueError: If ``nodes`` does not specify a node for a placeholder in ``arguments``.
         """
-        # pylint: disable=too-many-locals
         from string import Formatter
 
         formatter = Formatter()
@@ -314,7 +312,6 @@ class ShellJob(CalcJob):
         processed_nodes = []
 
         for argument in arguments:
-
             # Parse the argument for placeholders.
             field_names = [name for _, name, _, _ in formatter.parse(argument) if name]
 

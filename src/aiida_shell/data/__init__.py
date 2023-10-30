@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Module for :mod:`aiida_shell.data`."""
 from .code import ShellCode
 from .entry_point import EntryPointData

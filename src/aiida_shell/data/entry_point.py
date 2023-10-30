@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Data plugin to store a reference to an entry point."""
 from __future__ import annotations
 
@@ -85,8 +84,12 @@ class EntryPointData(Data):
             )
 
         keys = (
-            self.KEY_ATTRIBUTES_NAME, self.KEY_ATTRIBUTES_GROUP, self.KEY_ATTRIBUTES_VALUE, self.KEY_ATTRIBUTES_MODULE,
-            self.KEY_ATTRIBUTES_ATTR, self.KEY_ATTRIBUTES_EXTRAS
+            self.KEY_ATTRIBUTES_NAME,
+            self.KEY_ATTRIBUTES_GROUP,
+            self.KEY_ATTRIBUTES_VALUE,
+            self.KEY_ATTRIBUTES_MODULE,
+            self.KEY_ATTRIBUTES_ATTR,
+            self.KEY_ATTRIBUTES_EXTRAS,
         )
         attributes = {key: getattr(entry_point, key) for key in keys}
         attributes[self.KEY_ATTRIBUTES_VERSION] = VERSION_PROVIDER.get_version_info(loaded)['version'].get('plugin')
@@ -102,6 +105,6 @@ class EntryPointData(Data):
         entry_point = EntryPoint(
             name=attributes[self.KEY_ATTRIBUTES_NAME],
             group=attributes[self.KEY_ATTRIBUTES_GROUP],
-            value=attributes[self.KEY_ATTRIBUTES_VALUE]
+            value=attributes[self.KEY_ATTRIBUTES_VALUE],
         )
         return entry_point.load()
