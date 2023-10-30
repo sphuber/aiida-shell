@@ -26,7 +26,7 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
     filenames: dict[str, str] | None = None,
     arguments: list[str] | str | None = None,
     outputs: list[str] | None = None,
-    parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | None = None,
+    parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | str | None = None,
     metadata: dict[str, t.Any] | None = None,
     submit: bool = False,
 ) -> tuple[dict[str, Data], ProcessNode]:
@@ -41,7 +41,9 @@ def launch_shell_job(  # pylint: disable=too-many-arguments
         arguments can also be specified as a single string. In this case, it will be split into separate parameters
         using ``shlex.split``.
     :param outputs: Optional list of relative filenames that should be captured as outputs.
-    :param parser: Optional callable that can implement custom parsing logic of produced output files.
+    :param parser: Optional callable that can implement custom parsing logic of produced output files. Alternatively,
+        a complete entry point, i.e. a string of the form ``{entry_point_group}:{entry_point_name}`` pointing to such a
+        callable.
     :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
     :param submit: Boolean, if ``True`` will submit the job to the daemon instead of running in current interpreter.
     :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.

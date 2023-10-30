@@ -9,6 +9,11 @@ from aiida.orm import Data, Float, FolderData, Int, List, RemoteData, Singlefile
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
+from aiida_shell.data import EntryPointData, PickledData
+
+
+def custom_parser(self, dirpath):  # pylint: disable=unused-argument
+    """Implement a custom parser to test the ``parser`` input for a ``ShellJob``."""
 
 
 def test_code(generate_calc_job, generate_code):
@@ -328,22 +333,37 @@ def test_submit_to_daemon(generate_code, submit_and_await):
 
 def test_parser(generate_calc_job, generate_code):
     """Test the ``parser`` input for valid input."""
+    process = generate_calc_job(
+        'core.shell', inputs={
+            'code': generate_code(),
+            'parser': custom_parser
+        }, return_process=True
+    )
+    assert isinstance(process.inputs.parser, PickledData)
 
-    def parser(self, dirpath):  # pylint: disable=unused-argument
-        pass
 
-    process = generate_calc_job('core.shell', inputs={'code': generate_code(), 'parser': parser}, return_process=True)
-    assert isinstance(process.inputs.parser, SinglefileData)
+def test_parser_entry_point(generate_calc_job, generate_code, entry_points):
+    """Test the ``parser`` serialization and validation when input is an entry point."""
+    entry_point_name = 'aiida.parsers:shell.parser'
+    entry_points.add(custom_parser, entry_point_name)
+
+    process = generate_calc_job(
+        'core.shell', inputs={
+            'code': generate_code(),
+            'parser': entry_point_name
+        }, return_process=True
+    )
+    assert isinstance(process.inputs.parser, EntryPointData)
 
 
 def test_parser_invalid_not_callable(generate_calc_job, generate_code):
     """Test the ``parser`` validation when input is not callable."""
     with pytest.raises(ValueError, match=r'The `parser` is not a callable function: .* is not a callable object'):
-        generate_calc_job('core.shell', inputs={'code': generate_code(), 'parser': 'not-callable'})
+        generate_calc_job('core.shell', inputs={'code': generate_code(), 'parser': PickledData('not-callable')})
 
 
 def test_parser_invalid_signature(generate_calc_job, generate_code):
-    """Test the ``parser`` validation when input is not callable."""
+    """Test the ``parser`` validation when the callable has an invalid signature."""
     with pytest.raises(ValueError, match=r'The `parser` has an invalid function signature, it should be:.*'):
         generate_calc_job('core.shell', inputs={'code': generate_code(), 'parser': lambda x: x})
 
