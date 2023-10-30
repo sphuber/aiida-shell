@@ -581,3 +581,10 @@ which prints ``some output``.
         print(results['json'].get_dict())
 
     which prints ``{'a': 1}``.
+
+.. tip::
+
+    If you find yourself reusing the same parser often, you can also register it with an entry point and use that for the ``parser`` input.
+    See the `AiiDA documentation <https://aiida.readthedocs.io/projects/aiida-core/en/latest/howto/plugins_develop.html?highlight=entry%20point#registering-plugins-through-entry-points>`_ for details on how to register entry points.
+    For example, if the parser is registered with the name ``some.parser`` in the group ``aiida.parsers``, the ``parser`` input will accept ``aiida.parsers:some.parser``.
+    The entry point will automatically be validated and wrapped in a :class:`aiida_shell.data.entry_point.EntryPointData`.

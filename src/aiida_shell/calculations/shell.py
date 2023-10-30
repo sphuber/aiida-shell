@@ -11,7 +11,7 @@ from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
 from aiida.orm import Data, Dict, FolderData, List, RemoteData, SinglefileData, to_aiida_type
 
-from aiida_shell.data import PickledData
+from aiida_shell.data import EntryPointData, PickledData
 
 __all__ = ('ShellJob',)
 
@@ -38,7 +38,11 @@ class ShellJob(CalcJob):
         )
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
         spec.input(
-            'parser', valid_type=PickledData, required=False, serializer=PickledData, validator=cls.validate_parser
+            'parser',
+            valid_type=(EntryPointData, PickledData),
+            required=False,
+            serializer=cls.serialize_parser,
+            validator=cls.validate_parser
         )
         spec.input(
             'metadata.options.redirect_stderr',
@@ -112,6 +116,23 @@ class ShellJob(CalcJob):
             'ERROR_STDERR_NOT_EMPTY',
             message='The command exited with a zero status but the stderr was not empty.'
         )
+
+    @classmethod
+    def serialize_parser(cls, value: t.Any) -> EntryPointData | PickledData:
+        """Convert the ``value`` to a ``PickledData`` or ``EntryPointData`` instance if possible.
+
+        :param value: The object to serialize to a ``EntryPointData`` or ``PickledData`` instance.
+        :raises TypeError: If the object is not a string or callable.
+        """
+        if callable(value):
+            return PickledData(value)
+
+        if isinstance(value, str):
+            from aiida.plugins.entry_point import get_entry_point_from_string
+            entry_point = get_entry_point_from_string(value)
+            return EntryPointData(entry_point=entry_point)
+
+        raise TypeError(f'`value` should be a string or callable but got: {type(value)}')
 
     @classmethod
     def validate_parser(cls, value: t.Any, _) -> str | None:
