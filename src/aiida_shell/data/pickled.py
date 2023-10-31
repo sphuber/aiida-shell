@@ -9,6 +9,8 @@ import dill
 from aiida.common.log import AIIDA_LOGGER
 from aiida.orm import SinglefileData
 
+__all__ = ('PickledData',)
+
 LOGGER = AIIDA_LOGGER.getChild('pickled_data')
 
 

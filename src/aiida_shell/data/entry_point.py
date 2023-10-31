@@ -11,6 +11,8 @@ from aiida.plugins.entry_point import get_entry_point
 from aiida.plugins.utils import PluginVersionProvider
 from importlib_metadata import EntryPoint
 
+__all__ = ('EntryPointData',)
+
 LOGGER = AIIDA_LOGGER.getChild('entry_point')
 VERSION_PROVIDER = PluginVersionProvider()
 
