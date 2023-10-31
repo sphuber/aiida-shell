@@ -32,3 +32,9 @@ repos:
         language: python
         args: [--config-file=pyproject.toml]
         types: [python]
+        require_serial: true
+        pass_filenames: true
+        files: >-
+          (?x)^(
+              src/.*py|
+          )$

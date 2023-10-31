@@ -112,7 +112,7 @@ def prepare_code(command: str, computer: Computer | None = None) -> AbstractCode
                     f'failed to determine the absolute path of the command on the computer: {stderr}'
                 ) from exception
 
-        code = ShellCode(
+        code = ShellCode(  # type: ignore[assignment]
             label=command, computer=computer, filepath_executable=executable, default_calc_job_plugin='core.shell'
         ).store()
 

@@ -38,7 +38,7 @@ source = 'https://github.com/sphuber/aiida-shell'
 
 [project.optional-dependencies]
 dev = [
-    'mypy==0.981',
+    'mypy==1.6.1',
     'pre-commit',
     'pgtest~=1.3,>=1.3.1',
     'pytest~=6.2',
@@ -81,17 +81,17 @@ fail-on-change = true
 [tool.ruff]
 line-length = 120
 select = [
-  'E',    # pydocstyle
-  'W',    # pydocstyle
-  'F',    # pyflakes
-  'I',    # isort
-  'N',    # pep8-naming
-  'D',    # pydocstyle
-  'PLC',  # pylint-convention
-  'PLE',  # pylint-error
-  'PLR',  # pylint-refactor
-  'PLW',  # pylint-warning
-  'RUF',  # ruff
+    'E',    # pydocstyle
+    'W',    # pydocstyle
+    'F',    # pyflakes
+    'I',    # isort
+    'N',    # pep8-naming
+    'D',    # pydocstyle
+    'PLC',  # pylint-convention
+    'PLE',  # pylint-error
+    'PLR',  # pylint-refactor
+    'PLW',  # pylint-warning
+    'RUF',  # ruff
 ]
 ignore = [
     'D203',  # Incompatible with D211 `no-blank-line-before-class`
@@ -102,18 +102,11 @@ ignore = [
 quote-style = 'single'
 
 [tool.mypy]
-show_error_codes = true
-check_untyped_defs = true
-scripts_are_modules = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-no_warn_no_return = true
-show_traceback = true
-
-[[tool.mypy.overrides]]
-module = 'aiida_shell.*'
-follow_imports = 'skip'
-check_untyped_defs = true
+strict = true
+disallow_untyped_calls = false
+exclude = [
+    '^tests/',
+]
 
 [[tool.mypy.overrides]]
 module = [

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import typing as t
 
 from aiida.engine import ExitCode
 from aiida.orm import Data, FolderData, SinglefileData
@@ -24,7 +25,7 @@ __all__ = ('ShellParser',)
 class ShellParser(Parser):
     """Parser for a :class:`aiida_shell.ShellJob` job."""
 
-    def parse(self, **kwargs):
+    def parse(self, **kwargs: t.Any) -> ExitCode:
         """Parse the contents of the output files stored in the ``retrieved`` output node."""
         dirpath = pathlib.Path(kwargs['retrieved_temporary_folder'])
 
@@ -35,11 +36,21 @@ class ShellParser(Parser):
             try:
                 self.call_parser_hook(dirpath)
             except Exception as exception:
-                return self.exit_codes.ERROR_PARSER_HOOK_EXCEPTED.format(exception=exception)
+                return self.exit_code('ERROR_PARSER_HOOK_EXCEPTED', exception=exception)
 
         if missing_filepaths:
-            return self.exit_codes.ERROR_OUTPUT_FILEPATHS_MISSING.format(missing_filepaths=', '.join(missing_filepaths))
+            return self.exit_code('ERROR_OUTPUT_FILEPATHS_MISSING', missing_filepaths=', '.join(missing_filepaths))
 
+        return exit_code
+
+    def exit_code(self, key: str, **kwargs: t.Any) -> ExitCode:
+        """Return the exit code corresponding to the given key.
+
+        :param key: The key under which the exit code is registered.
+        :param kwargs: Any keyword arguments to format the exit code message.
+        :returns: The formatted exit code.
+        """
+        exit_code: ExitCode = getattr(self.exit_codes, key).format(**kwargs)
         return exit_code
 
     @staticmethod
@@ -78,22 +89,22 @@ class ShellParser(Parser):
             with (dirpath / filename_stdout).open(mode='rb') as handle:
                 node_stdout = SinglefileData(handle, filename=filename_stdout)
         except FileNotFoundError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
+            return self.exit_code('ERROR_OUTPUT_STDOUT_MISSING')
 
         self.out(self.format_link_label(filename_stdout), node_stdout)
 
         try:
             exit_status = int((dirpath / ShellJob.FILENAME_STATUS).read_text())
         except FileNotFoundError:
-            return self.exit_codes.ERROR_OUTPUT_STATUS_MISSING
+            return self.exit_code('ERROR_OUTPUT_STATUS_MISSING')
         except ValueError:
-            return self.exit_codes.ERROR_OUTPUT_STATUS_INVALID
+            return self.exit_code('ERROR_OUTPUT_STATUS_INVALID')
 
         if exit_status != 0:
-            return self.exit_codes.ERROR_COMMAND_FAILED.format(status=exit_status, stderr=stderr)
+            return self.exit_code('ERROR_COMMAND_FAILED', status=exit_status, stderr=stderr)
 
         if stderr:
-            return self.exit_codes.ERROR_STDERR_NOT_EMPTY
+            return self.exit_code('ERROR_STDERR_NOT_EMPTY')
 
         return ExitCode()
 
@@ -121,7 +132,7 @@ class ShellParser(Parser):
 
         return missing_filepaths
 
-    def call_parser_hook(self, dirpath: pathlib.Path):
+    def call_parser_hook(self, dirpath: pathlib.Path) -> None:
         """Execute the ``parser`` custom parser hook that was passed as input to the ``ShellJob``."""
         unpickled_parser = self.node.inputs.parser.load()
         results = unpickled_parser(self, dirpath) or {}

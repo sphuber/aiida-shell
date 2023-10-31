@@ -1,6 +1,8 @@
 """Code that represents a shell command."""
 from __future__ import annotations
 
+import typing as t
+
 from aiida.orm import InstalledCode
 
 __all__ = ('ShellCode',)
@@ -14,7 +16,7 @@ class ShellCode(InstalledCode):
     calculation job as well.
     """
 
-    def __init__(self, *args, default_calc_job_plugin: str = 'core.shell', **kwargs) -> None:
+    def __init__(self, *args: t.Any, default_calc_job_plugin: str = 'core.shell', **kwargs: t.Any) -> None:
         """Construct a new instance."""
         self.validate_default_calc_job_plugin(default_calc_job_plugin)
         super().__init__(*args, default_calc_job_plugin=default_calc_job_plugin, **kwargs)
@@ -31,7 +33,7 @@ class ShellCode(InstalledCode):
             raise ValueError(f'`default_calc_job_plugin` has to be `core.shell`, but got: {default_calc_job_plugin}')
 
     @classmethod
-    def _get_cli_options(cls) -> dict:
+    def _get_cli_options(cls) -> dict[str, t.Any]:
         """Return the CLI options that would allow to create an instance of this class."""
         options = super()._get_cli_options()
         options['default_calc_job_plugin']['default'] = 'core.shell'

@@ -42,7 +42,12 @@ class EntryPointData(Data):
     """Attribute key that stores the version of the package that provided the entry point, if available."""
 
     def __init__(
-        self, *, entry_point: EntryPoint | None = None, name: str | None = None, group: str | None = None, **kwargs
+        self,
+        *,
+        entry_point: EntryPoint | None = None,
+        name: str | None = None,
+        group: str | None = None,
+        **kwargs: t.Any,
     ):
         """Construct a new instance.
 
