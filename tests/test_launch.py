@@ -1,4 +1,4 @@
-"""Tests for the :mod:`aiida_shell.engine.launchers.shell_job` module."""
+"""Tests for the :mod:`aiida_shell.launch` module."""
 import datetime
 import io
 import json
@@ -9,7 +9,7 @@ import pytest
 from aiida.engine import WorkChain, run_get_node, workfunction
 from aiida.orm import AbstractCode, Float, Int, RemoteData, SinglefileData, Str
 from aiida_shell.calculations.shell import ShellJob
-from aiida_shell.engine.launchers.shell_job import launch_shell_job
+from aiida_shell.launch import launch_shell_job
 
 
 class ShellWorkChain(WorkChain):
@@ -68,7 +68,7 @@ def test_command(generate_code):
 def test_command_invalid():
     """Test the ``command`` argument raises a ``TypeError`` if anything but a ``str`` or ``AbstractCode`` is passed."""
     with pytest.raises(TypeError, match=r'Got object of type .*, expecting .*'):
-        launch_shell_job(None)  # type: ignore[arg-type]
+        launch_shell_job(None)
 
 
 def test_arguments():
@@ -188,7 +188,7 @@ def test_files_type(tmp_path, filename):
 def test_files_invalid_type():
     """Test the function raises a ``TypeError`` for an invalid type in ``nodes``."""
     with pytest.raises(TypeError, match=r'received type .* for `filename` in `nodes`.*'):
-        launch_shell_job('cat', nodes={'filename': True})  # type: ignore[dict-item]
+        launch_shell_job('cat', nodes={'filename': True})
 
 
 def test_files_not_exist():
