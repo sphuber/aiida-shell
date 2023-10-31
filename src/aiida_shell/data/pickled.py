@@ -97,7 +97,7 @@ class PickledData(SinglefileData):
             ) from exception
 
         try:
-            unpickler = getattr(unpickler_module, name)
+            unpickler: t.Callable[[bytes], t.Any] = getattr(unpickler_module, name)
         except AttributeError as exception:
             raise RuntimeError(
                 f'Could not load `{name}` from `{module} which should be able to unpickle this node.'

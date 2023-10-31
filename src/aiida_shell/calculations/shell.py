@@ -24,7 +24,7 @@ class ShellJob(CalcJob):
     DEFAULT_RETRIEVED_TEMPORARY: tuple[str, ...] = (FILENAME_STATUS, FILENAME_STDERR, FILENAME_STDOUT)
 
     @classmethod
-    def define(cls, spec: CalcJobProcessSpec):  # type: ignore[override]
+    def define(cls, spec: CalcJobProcessSpec) -> None:  # type: ignore[override]
         """Define the process specification.
 
         :param spec: The object to use to build up the process specification.
@@ -133,7 +133,7 @@ class ShellJob(CalcJob):
         raise TypeError(f'`value` should be a string or callable but got: {type(value)}')
 
     @classmethod
-    def validate_parser(cls, value: t.Any, _) -> str | None:
+    def validate_parser(cls, value: t.Any, _: t.Any) -> str | None:
         """Validate the ``parser`` input."""
         if not value:
             return None
@@ -154,8 +154,10 @@ class ShellJob(CalcJob):
             correct_signature = '(self, dirpath: pathlib.Path) -> dict[str, Data]:'
             return f'The `parser` has an invalid function signature, it should be: {correct_signature}'
 
+        return None
+
     @classmethod
-    def validate_nodes(cls, value: t.Mapping[str, Data], _) -> str | None:
+    def validate_nodes(cls, value: t.Mapping[str, Data], _: t.Any) -> str | None:
         """Validate the ``nodes`` input."""
         for key, node in value.items():
             if isinstance(node, (FolderData, RemoteData, SinglefileData)):
@@ -169,8 +171,10 @@ class ShellJob(CalcJob):
             except Exception as exception:
                 return f'Casting `value` to `str` for `{key}` in `nodes` excepted: {exception}'
 
+        return None
+
     @classmethod
-    def validate_arguments(cls, value: List, _) -> str | None:
+    def validate_arguments(cls, value: List, _: t.Any) -> str | None:
         """Validate the ``arguments`` input."""
         if not value:
             return None
@@ -187,8 +191,10 @@ class ShellJob(CalcJob):
         if '>' in elements:
             return 'the symbol `>` cannot be specified in the `arguments`; stdout is automatically redirected.'
 
+        return None
+
     @classmethod
-    def validate_outputs(cls, value: List, _) -> str | None:
+    def validate_outputs(cls, value: List, _: t.Any) -> str | None:
         """Validate the ``outputs`` input."""
         if not value:
             return None
@@ -265,7 +271,7 @@ class ShellJob(CalcJob):
         return calc_info
 
     @staticmethod
-    def handle_remote_data_nodes(inputs: dict[str, Data]) -> tuple[list, list]:
+    def handle_remote_data_nodes(inputs: dict[str, Data]) -> tuple[list[t.Any], list[t.Any]]:
         """Handle a ``RemoteData`` that was passed in the ``nodes`` input.
 
         :param inputs: The inputs dictionary.
@@ -369,7 +375,7 @@ class ShellJob(CalcJob):
         :returns: The relative filename used to write the content to ``dirpath``.
         """
         default_filename = node.filename if node.filename and node.filename != SinglefileData.DEFAULT_FILENAME else key
-        filename = filenames.get(key, default_filename)
+        filename: str = filenames.get(key, default_filename)
         filepath = dirpath / filename
 
         filepath.parent.mkdir(parents=True, exist_ok=True)
