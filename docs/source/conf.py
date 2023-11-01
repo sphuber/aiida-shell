@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
 """Configuration file for the Sphinx documentation builder.
 
 This file only contains a selection of the most common options. For a full list see the documentation:
 https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
-# pylint: disable=invalid-name
 import aiida_shell
 
 project = 'aiida-shell'
-copyright = 'Sebastiaan P. Huber 2022 - 2023'  # pylint: disable=redefined-builtin
+copyright = 'Sebastiaan P. Huber 2022 - 2023'
 release = aiida_shell.__version__
 
 extensions = ['sphinx_copybutton', 'sphinx_click', 'sphinx.ext.intersphinx']
@@ -23,7 +21,7 @@ html_theme_options = {
     'logo': {
         'image_light': '_static/logo-text.svg',
         'image_dark': '_static/logo-text-light.svg',
-    }
+    },
 }
 html_context = {
     'github_user': 'sphuber',

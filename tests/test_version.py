@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """Tests for the :mod:`aiida_shell` module."""
-from packaging.version import Version, parse
-
 import aiida_shell
+from packaging.version import Version, parse
 
 
 def test_version():

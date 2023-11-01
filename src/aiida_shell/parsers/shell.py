@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ###########################################################################
 # Copyright (c), The AiiDA team. All rights reserved.                     #
 # This file is part of the AiiDA code.                                    #
@@ -35,7 +34,7 @@ class ShellParser(Parser):
         if 'parser' in self.node.inputs:
             try:
                 self.call_parser_hook(dirpath)
-            except Exception as exception:  # pylint: disable=broad-except
+            except Exception as exception:
                 return self.exit_codes.ERROR_PARSER_HOOK_EXCEPTED.format(exception=exception)
 
         if missing_filepaths:

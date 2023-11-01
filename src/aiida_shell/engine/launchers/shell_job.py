@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Convenience wrapper function to simplify the interface to launch a :class:`aiida_shell.ShellJob` job."""
 from __future__ import annotations
 
@@ -20,7 +19,7 @@ __all__ = ('launch_shell_job',)
 LOGGER = logging.getLogger('aiida_shell')
 
 
-def launch_shell_job(  # pylint: disable=too-many-arguments
+def launch_shell_job(  # noqa: PLR0913
     command: str | AbstractCode,
     arguments: list[str] | str | None = None,
     nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
@@ -113,7 +112,7 @@ def prepare_code(command: str, computer: Computer | None = None) -> AbstractCode
                     f'failed to determine the absolute path of the command on the computer: {stderr}'
                 ) from exception
 
-        code = ShellCode(  # type: ignore[assignment]
+        code = ShellCode(
             label=command, computer=computer, filepath_executable=executable, default_calc_job_plugin='core.shell'
         ).store()
 
@@ -149,8 +148,8 @@ def prepare_computer(computer: Computer | None = None) -> Computer:
                 scheduler_type='core.direct',
                 workdir=tempfile.gettempdir(),
             ).store()
-            computer.configure(safe_interval=0.)
-            computer.set_minimum_job_poll_interval(0.)
+            computer.configure(safe_interval=0.0)
+            computer.set_minimum_job_poll_interval(0.0)
             computer.set_default_mpiprocs_per_machine(1)
 
     default_user = computer.backend.default_user
@@ -172,7 +171,6 @@ def convert_nodes_single_file_data(nodes: t.Mapping[str, str | pathlib.Path | Da
     processed_nodes: t.MutableMapping[str, Data] = {}
 
     for key, value in nodes.items():
-
         if isinstance(value, Data):
             processed_nodes[key] = value
             continue

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the :mod:`aiida_shell.engine.launchers.shell_job` module."""
 import datetime
 import io
@@ -6,10 +5,9 @@ import json
 import pathlib
 import shutil
 
+import pytest
 from aiida.engine import WorkChain, run_get_node, workfunction
 from aiida.orm import AbstractCode, Float, Int, RemoteData, SinglefileData, Str
-import pytest
-
 from aiida_shell.calculations.shell import ShellJob
 from aiida_shell.engine.launchers.shell_job import launch_shell_job
 
@@ -142,9 +140,7 @@ def test_nodes_remote_data(tmp_path, aiida_localhost, use_symlinks):
         nodes={'remote': remote_data},
         outputs=['file_a.txt'],
         metadata={
-            'options': {
-                'use_symlinks': use_symlinks
-            },
+            'options': {'use_symlinks': use_symlinks},
         },
     )
     assert node.is_finished_ok
@@ -247,8 +243,9 @@ def test_submit_inside_workfunction(submit_and_await):
 def test_parser():
     """Test the ``parser`` argument."""
 
-    def parser(self, dirpath):  # pylint: disable=unused-argument
-        from aiida.orm import Str  # pylint: disable=reimported,redefined-outer-name
+    def parser(self, dirpath):
+        from aiida.orm import Str
+
         return {'string': Str((dirpath / 'stdout').read_text().strip())}
 
     value = 'test_string'
@@ -266,11 +263,11 @@ def test_parser_non_stdout():
     """
     filename = 'results.json'
 
-    def parser(self, dirpath):  # pylint: disable=unused-argument
-        # pylint: disable=reimported,redefined-outer-name
+    def parser(self, dirpath):
         import json
 
         from aiida.orm import Dict
+
         return {'json': Dict(json.load((dirpath / filename).open()))}
 
     dictionary = {'a': 1}
@@ -279,10 +276,7 @@ def test_parser_non_stdout():
         arguments=['{json}'],
         nodes={'json': SinglefileData(io.StringIO(json.dumps(dictionary)))},
         parser=parser,
-        metadata={'options': {
-            'output_filename': filename,
-            'additional_retrieve': [filename]
-        }}
+        metadata={'options': {'output_filename': filename, 'additional_retrieve': [filename]}},
     )
 
     assert node.is_finished_ok

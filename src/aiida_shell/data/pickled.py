@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Data plugin to store (almost) any Python object by pickling it."""
 from __future__ import annotations
 
@@ -6,9 +5,9 @@ import importlib.metadata
 import io
 import typing as t
 
+import dill
 from aiida.common.log import AIIDA_LOGGER
 from aiida.orm import SinglefileData
-import dill
 
 LOGGER = AIIDA_LOGGER.getChild('pickled_data')
 
@@ -133,7 +132,7 @@ class PickledData(SinglefileData):
 
         try:
             unpickled = self.get_unpickler()(pickled)
-        except Exception as exception:  # pylint: disable=broad-except
+        except Exception as exception:
             raise ValueError('The pickled object could not be unpickled.') from exception
 
         return unpickled

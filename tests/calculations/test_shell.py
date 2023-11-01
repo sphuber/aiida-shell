@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the :mod:`aiida_shell.calculations.shell` module."""
 import io
 import pathlib
 
+import pytest
 from aiida.common.datastructures import CodeInfo
 from aiida.orm import Data, Float, FolderData, Int, List, RemoteData, SinglefileData, Str
-import pytest
-
 from aiida_shell.calculations.shell import ShellJob
 from aiida_shell.data import EntryPointData, PickledData
 
 
-def custom_parser(self, dirpath):  # pylint: disable=unused-argument
+def custom_parser(self, dirpath):
     """Implement a custom parser to test the ``parser`` input for a ``ShellJob``."""
 
 
@@ -27,7 +24,7 @@ def test_code(generate_calc_job, generate_code):
     assert calc_info.codes_info[0].code_uuid == code.uuid
     assert calc_info.codes_info[0].cmdline_params == []
     assert calc_info.codes_info[0].stdout_name == ShellJob.FILENAME_STDOUT
-    assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert calc_info.retrieve_temporary_list == list(ShellJob.DEFAULT_RETRIEVED_TEMPORARY)
     assert not list(dirpath.iterdir())
 
 
@@ -38,14 +35,14 @@ def test_nodes_single_file_data(generate_calc_job, generate_code):
         'nodes': {
             'xa': SinglefileData(io.StringIO('content')),
             'xb': SinglefileData(io.StringIO('content')),
-        }
+        },
     }
     dirpath, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
 
     assert code_info.cmdline_params == []
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
-    assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert calc_info.retrieve_temporary_list == list(ShellJob.DEFAULT_RETRIEVED_TEMPORARY)
     assert sorted(calc_info.provenance_exclude_list) == ['xa', 'xb']
     assert sorted([p.name for p in dirpath.iterdir()]) == ['xa', 'xb']
 
@@ -67,17 +64,14 @@ def test_nodes_folder_data(generate_calc_job, generate_code, tmp_path):
             'flat_explicit': folder_flat,
             'nested_explicit': folder_nested,
         },
-        'filenames': {
-            'flat_explicit': 'sub',
-            'nested_explicit': 'sub'
-        }
+        'filenames': {'flat_explicit': 'sub', 'nested_explicit': 'sub'},
     }
     dirpath, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
 
     assert code_info.cmdline_params == ['nested', 'sub']
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
-    assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert calc_info.retrieve_temporary_list == list(ShellJob.DEFAULT_RETRIEVED_TEMPORARY)
     assert sorted(calc_info.provenance_exclude_list) == ['dir', 'file_a.txt', 'file_b.txt', 'sub']
     assert sorted([p.name for p in dirpath.iterdir()]) == ['dir', 'file_a.txt', 'file_b.txt', 'sub']
     assert sorted([p.name for p in (dirpath / 'dir').iterdir()]) == ['file_a.txt', 'file_b.txt']
@@ -96,11 +90,7 @@ def test_nodes_remote_data(generate_calc_job, generate_code, tmp_path, aiida_loc
         'nodes': {
             'remote': RemoteData(remote_path=str(tmp_path.absolute()), computer=aiida_localhost),
         },
-        'metadata': {
-            'options': {
-                'use_symlinks': use_symlinks
-            }
-        }
+        'metadata': {'options': {'use_symlinks': use_symlinks}},
     }
     _, calc_info = generate_calc_job('core.shell', inputs)
 
@@ -121,14 +111,14 @@ def test_nodes_base_types(generate_calc_job, generate_code):
             'float': Float(1.0),
             'int': Int(2),
             'str': Str('string'),
-        }
+        },
     }
     _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
 
     assert code_info.cmdline_params == ['1.0', '2', 'string']
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
-    assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert calc_info.retrieve_temporary_list == list(ShellJob.DEFAULT_RETRIEVED_TEMPORARY)
 
 
 def test_nodes_single_file_data_filename(generate_calc_job, generate_code):
@@ -149,22 +139,23 @@ def test_nodes_single_file_data_filename(generate_calc_job, generate_code):
         },
         'filenames': {
             'xb': 'filename_b',
-        }
+        },
     }
     dirpath, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
 
     assert code_info.cmdline_params == []
     assert code_info.stdout_name == ShellJob.FILENAME_STDOUT
-    assert calc_info.retrieve_temporary_list == ShellJob.DEFAULT_RETRIEVED_TEMPORARY
+    assert calc_info.retrieve_temporary_list == list(ShellJob.DEFAULT_RETRIEVED_TEMPORARY)
     assert sorted([p.name for p in dirpath.iterdir()]) == ['filename_b', 'single_file_a', 'xc']
 
 
 @pytest.mark.parametrize(
-    'arguments, exception', (
+    'arguments, exception',
+    (
         (['{place}{holder}'], r'argument `.*` is invalid as it contains more than one placeholder.'),
         (['{placeholder}'], r'argument placeholder `.*` not specified in `nodes`.'),
-    )
+    ),
 )
 def test_arguments_invalid(generate_calc_job, generate_code, arguments, exception):
     """Test the ``arguments`` input with invalid placeholders."""
@@ -191,9 +182,7 @@ def test_arguments_files(generate_calc_job, generate_code):
     inputs = {
         'code': generate_code(),
         'arguments': arguments,
-        'nodes': {
-            'file_a': SinglefileData(io.StringIO('content'))
-        },
+        'nodes': {'file_a': SinglefileData(io.StringIO('content'))},
     }
     _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
@@ -216,7 +205,7 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
         'filenames': {
             'file_a': 'custom_filename',
             'file_b': 'nested/custom_filename',
-        }
+        },
     }
     _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
@@ -228,21 +217,15 @@ def test_filename_stdin(generate_calc_job, generate_code, file_regression):
     inputs = {
         'code': generate_code('cat'),
         'arguments': List(['{filename}']),
-        'nodes': {
-            'filename': SinglefileData(io.StringIO('content'))
-        },
-        'metadata': {
-            'options': {
-                'filename_stdin': 'filename'
-            }
-        }
+        'nodes': {'filename': SinglefileData(io.StringIO('content'))},
+        'metadata': {'options': {'filename_stdin': 'filename'}},
     }
     tmp_path, calc_info = generate_calc_job('core.shell', inputs, presubmit=True)
     code_info = calc_info.codes_info[0]
     assert code_info.stdin_name == 'filename'
 
     options = ShellJob.spec_metadata['options']
-    filename_submit_script = options['submit_script_filename'].default  # type: ignore[index,union-attr]
+    filename_submit_script = options['submit_script_filename'].default
     file_regression.check((pathlib.Path(tmp_path) / filename_submit_script).read_text(), encoding='utf-8')
 
 
@@ -264,11 +247,12 @@ def test_redirect_stderr(generate_calc_job, generate_code, redirect_stderr):
 
 
 @pytest.mark.parametrize(
-    'outputs, message', (
+    'outputs, message',
+    (
         ([ShellJob.FILENAME_STATUS], r'`.*` is a reserved output filename and cannot be used in `outputs`.'),
         ([ShellJob.FILENAME_STDERR], r'`.*` is a reserved output filename and cannot be used in `outputs`.'),
         ([ShellJob.FILENAME_STDOUT], r'`.*` is a reserved output filename and cannot be used in `outputs`.'),
-    )
+    ),
 )
 def test_validate_outputs(generate_calc_job, generate_code, outputs, message):
     """Test the validator for the ``outputs`` argument."""
@@ -277,10 +261,11 @@ def test_validate_outputs(generate_calc_job, generate_code, outputs, message):
 
 
 @pytest.mark.parametrize(
-    'node_cls, message', (
+    'node_cls, message',
+    (
         (Data, r'.*Unsupported node type for `.*` in `nodes`: .* does not have the `value` property.'),
         (Int, r'.*Casting `value` to `str` for `.*` in `nodes` excepted: .*'),
-    )
+    ),
 )
 def test_validate_nodes(generate_calc_job, generate_code, node_cls, message, monkeypatch):
     """Test the validator for the ``nodes`` argument."""
@@ -300,12 +285,13 @@ def test_validate_nodes(generate_calc_job, generate_code, node_cls, message, mon
 
 
 @pytest.mark.parametrize(
-    'arguments, message', (
+    'arguments, message',
+    (
         (['string', 1], r'.*all elements of the `arguments` input should be strings'),
         (['string', {input}], r'.*all elements of the `arguments` input should be strings'),
         (['<', '{filename}'], r'`<` cannot be specified in the `arguments`.*'),
         (['{filename}', '>'], r'the symbol `>` cannot be specified in the `arguments`.*'),
-    )
+    ),
 )
 def test_validate_arguments(generate_calc_job, generate_code, arguments, message):
     """Test the validator for the ``arguments`` argument."""
@@ -319,7 +305,7 @@ def test_build_process_label(generate_calc_job, generate_code):
     executable = '/bin/echo'
     code = generate_code(executable, computer_label=computer, label='echo')
     process = generate_calc_job('core.shell', {'code': code}, return_process=True)
-    assert process._build_process_label() == f'ShellJob<{code.full_label}>'  # pylint: disable=protected-access
+    assert process._build_process_label() == f'ShellJob<{code.full_label}>'
 
 
 def test_submit_to_daemon(generate_code, submit_and_await):
@@ -334,10 +320,7 @@ def test_submit_to_daemon(generate_code, submit_and_await):
 def test_parser(generate_calc_job, generate_code):
     """Test the ``parser`` input for valid input."""
     process = generate_calc_job(
-        'core.shell', inputs={
-            'code': generate_code(),
-            'parser': custom_parser
-        }, return_process=True
+        'core.shell', inputs={'code': generate_code(), 'parser': custom_parser}, return_process=True
     )
     assert isinstance(process.inputs.parser, PickledData)
 
@@ -348,10 +331,7 @@ def test_parser_entry_point(generate_calc_job, generate_code, entry_points):
     entry_points.add(custom_parser, entry_point_name)
 
     process = generate_calc_job(
-        'core.shell', inputs={
-            'code': generate_code(),
-            'parser': entry_point_name
-        }, return_process=True
+        'core.shell', inputs={'code': generate_code(), 'parser': entry_point_name}, return_process=True
     )
     assert isinstance(process.inputs.parser, EntryPointData)
 
@@ -372,8 +352,9 @@ def test_parser_over_daemon(generate_code, submit_and_await):
     """Test submitting a ``ShellJob`` with a custom parser over the daemon."""
     value = 'testing'
 
-    def parser(self, dirpath):  # pylint: disable=unused-argument
-        from aiida.orm import Str  # pylint: disable=reimported
+    def parser(self, dirpath):
+        from aiida.orm import Str
+
         return {'string': Str((dirpath / 'stdout').read_text().strip())}
 
     builder = generate_code('/bin/echo').get_builder()

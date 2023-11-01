@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the :mod:`aiida_shell.data.entry_point` module."""
+import pytest
 from aiida.orm import load_node
 from aiida.plugins.entry_point import get_entry_point
-from importlib_metadata import EntryPoint
-import pytest
-
 from aiida_shell.data.entry_point import EntryPointData
+from importlib_metadata import EntryPoint
 
 InvalidEntryPoint = EntryPoint('b', 'a', group='c')
 InconsistentEntryPoint = EntryPoint('b', 'aiida_shell.data.pickled:PickledData', group='c')
@@ -29,31 +26,17 @@ def test_constructor(entry_point):
 
 
 @pytest.mark.parametrize(
-    'kwargs, exception, matches', (
+    'kwargs, exception, matches',
+    (
         ({}, ValueError, r'Define either the `entry_point` directly or the `group` and `name`\.'),
-        ({
-            'group': 'some.group'
-        }, ValueError, r'Define either the `entry_point` directly or the `group` and `name`\.'),
-        ({
-            'name': 'some.name'
-        }, ValueError, r'Define either the `entry_point` directly or the `group` and `name`\.'),
-        ({
-            'entry_point': 'invalid_type'
-        }, TypeError, r'Got object of type .*, expecting .*'),
-        ({
-            'group': 'a',
-            'name': 'a'
-        }, ValueError, r'entry point with group `a` and name `a` does not exist.'),
-        ({
-            'entry_point': InvalidEntryPoint
-        }, ValueError, r'entry point .* could not be loaded.'),
-        ({
-            'entry_point': InconsistentEntryPoint
-        }, ValueError, r'Inconsistent.*: the `name` and `group` of .* do not'),
-        ({
-            'entry_point': DifferentEntryPoint
-        }, ValueError, r'Inconsistent.*: the `name` and `group` of .* point'),
-    )
+        ({'group': 'some.group'}, ValueError, r'Define either the `entry_point` directly or the `group` and `name`\.'),
+        ({'name': 'some.name'}, ValueError, r'Define either the `entry_point` directly or the `group` and `name`\.'),
+        ({'entry_point': 'invalid_type'}, TypeError, r'Got object of type .*, expecting .*'),
+        ({'group': 'a', 'name': 'a'}, ValueError, r'entry point with group `a` and name `a` does not exist.'),
+        ({'entry_point': InvalidEntryPoint}, ValueError, r'entry point .* could not be loaded.'),
+        ({'entry_point': InconsistentEntryPoint}, ValueError, r'Inconsistent.*: the `name` and `group` of .* do not'),
+        ({'entry_point': DifferentEntryPoint}, ValueError, r'Inconsistent.*: the `name` and `group` of .* point'),
+    ),
 )
 def test_constructor_invalid(kwargs, exception, matches):
     """Test the constructor of :class:`~aiida_shell.data.entry_point.EntryPointData`."""
@@ -77,5 +60,6 @@ def test_load():
 def test_version():
     """Test that the package version of the wrapped entry point is stored in the attributes."""
     from aiida_shell import __version__
+
     node = EntryPointData(group='aiida.data', name='core.entry_point')
     assert node.base.attributes.get(EntryPointData.KEY_ATTRIBUTES_VERSION) == __version__
