@@ -1,5 +1,5 @@
 <div style="text-align: center;">
-    <img src="docs/source/images/logo-text.svg" style="width:100%" alt="aiida-shell"/>
+    <img src="docs/source/_static/logo-text.svg" style="width:100%" alt="aiida-shell"/>
 </div>
 
 [![PyPI version](https://badge.fury.io/py/aiida-shell.svg)](https://badge.fury.io/py/aiida-shell)
