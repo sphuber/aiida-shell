@@ -5,7 +5,7 @@ import io
 import pathlib
 
 from aiida.common.datastructures import CodeInfo
-from aiida.orm import Data, Float, FolderData, Int, List, SinglefileData, Str
+from aiida.orm import Data, Float, FolderData, Int, List, RemoteData, SinglefileData, Str
 import pytest
 
 from aiida_shell.calculations.shell import ShellJob
@@ -80,6 +80,31 @@ def test_nodes_folder_data(generate_calc_job, generate_code, tmp_path):
     assert sorted([p.name for p in (dirpath / 'sub' / 'dir').iterdir()]) == ['file_a.txt', 'file_b.txt']
     assert (dirpath / 'file_a.txt').read_text() == 'content a'
     assert (dirpath / 'file_b.txt').read_text() == 'content b'
+
+
+@pytest.mark.parametrize('use_symlinks', (True, False))
+def test_nodes_remote_data(generate_calc_job, generate_code, tmp_path, aiida_localhost, use_symlinks):
+    """Test the ``nodes`` input with ``RemoteData`` nodes ."""
+    inputs = {
+        'code': generate_code(),
+        'arguments': [],
+        'nodes': {
+            'remote': RemoteData(remote_path=str(tmp_path.absolute()), computer=aiida_localhost),
+        },
+        'metadata': {
+            'options': {
+                'use_symlinks': use_symlinks
+            }
+        }
+    }
+    _, calc_info = generate_calc_job('core.shell', inputs)
+
+    if use_symlinks:
+        assert calc_info.remote_copy_list == []
+        assert sorted(calc_info.remote_symlink_list) == [(aiida_localhost.uuid, str(tmp_path / '*'), '.')]
+    else:
+        assert calc_info.remote_symlink_list == []
+        assert sorted(calc_info.remote_copy_list) == [(aiida_localhost.uuid, str(tmp_path / '*'), '.')]
 
 
 def test_nodes_base_types(generate_calc_job, generate_code):
