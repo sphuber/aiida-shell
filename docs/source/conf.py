@@ -13,19 +13,29 @@ release = aiida_shell.__version__
 
 extensions = ['sphinx_copybutton', 'sphinx_click', 'sphinx.ext.intersphinx']
 
-html_theme = 'sphinx_book_theme'
+html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
-    'home_page_in_toc': True,
-    'repository_url': 'https://github.com/sphuber/aiida-shell',
-    'repository_branch': 'master',
-    'use_repository_button': True,
-    'use_issues_button': True,
-    'use_fullscreen_button': False,
-    'path_to_docs': 'docs',
+    'pygment_light_style': 'abap',
+    'pygment_dark_style': 'nord',
     'use_edit_page_button': True,
+    'navbar_align': 'left',
+    'github_url': 'https://github.com/sphuber/aiida-shell',
+    'logo': {
+        'image_light': '_static/logo-text.svg',
+        'image_dark': '_static/logo-text-light.svg',
+    }
 }
+html_context = {
+    'github_user': 'sphuber',
+    'github_repo': 'aiida-shell',
+    'github_version': 'master',
+}
+html_static_path = ['_static']
+html_css_files = [
+    'custom.css',
+]
 html_domain_indices = True
-html_logo = 'images/logo-column.png'
+# html_logo = 'images/logo-text.svg'
 
 # Settings for the `sphinx_copybutton` extension
 copybutton_selector = 'div:not(.no-copy)>div.highlight pre'
