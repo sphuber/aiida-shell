@@ -1,5 +1,38 @@
 # Change log
 
+## `v0.6.0` - 2023-11-02
+
+### Features
+- `ShellJob`: Add support for `RemoteData` nodes [[4a60253]](https://github.com/sphuber/aiida-shell/commit/4a60253210b455869e285685dfc53984204fe11c)
+
+    The `nodes` input of the `launch_shell_job` and `ShellJob` now allow `RemoteData` nodes.
+    Their content will be copied to the working directory of the job, just as with `SinglefileData` nodes.
+    See [the how-to example in the documentation](https://aiida-shell.readthedocs.io/en/latest/howto.html#running-a-shell-command-with-remote-data) for details.
+
+- `ShellJob`: Allow entry point strings for the `parser` input [[2f4fb3d]](https://github.com/sphuber/aiida-shell/commit/2f4fb3df8e419228cf2b70ddf1aa5bd25b0ae708)
+- Add the `EntryPointData` data plugin [[161cfef]](https://github.com/sphuber/aiida-shell/commit/161cfef271b4b97150c747447a9b51e28afd592d)
+
+### Fixes
+- `ShellJob`: Do not copy contents of `nodes` to repository [[5d46235]](https://github.com/sphuber/aiida-shell/commit/5d4623504cb36387334356d5bfb131f30153efc8)
+
+### Changes
+- `launch_shell_job`: Move `arguments` to be the second argument [[8957f59]](https://github.com/sphuber/aiida-shell/commit/8957f594405e05bfe87e0d285e771b30d8953b6f)
+- Add top-level imports explicitly to `__all__` [[7fc9ba5]](https://github.com/sphuber/aiida-shell/commit/7fc9ba5aaa89f1f9c2595b3c35c35d16f70c3d6d)
+- Move module `engine.launchers.shell_job` to `launch` [[a0dac1e]](https://github.com/sphuber/aiida-shell/commit/a0dac1e2f34db6cd13eafb4ebf4ac0ba2143ecba)
+
+### Docs
+- Update the styling to custom theme [[0588076]](https://github.com/sphuber/aiida-shell/commit/0588076b13c8e4d818ded72c88cc899e77a771ac)
+- Add example showcase of `pdb-tools` [[ae6b919]](https://github.com/sphuber/aiida-shell/commit/ae6b919492300091aa3fedbf061b50cbbbd2a5bf)
+- Add the changelog to the documentation [[6bc435b]](https://github.com/sphuber/aiida-shell/commit/6bc435bece7c38ad0d8b555a0cebe3936382b637)
+- Improve the logo [[42fd0de]](https://github.com/sphuber/aiida-shell/commit/42fd0def21ac9a9234fc136b582fef98ae1a0f7d)
+- Fix outdated markdown style header [[a2a9294]](https://github.com/sphuber/aiida-shell/commit/a2a929478c2137726045e251fa47b3b09eb10ebb)
+
+### Devops
+- Migrate to `ruff` and cleanup pre-commit config [[a591f2a]](https://github.com/sphuber/aiida-shell/commit/a591f2ab0f4d81d07eb617404df058ddd6a1f351)
+- Update `setup-python` dependency in CI/CD to v4 [[3788672]](https://github.com/sphuber/aiida-shell/commit/37886727bf583e35ae7e9ea9db06ce2984cff5d7)
+- Update dependency requirement `mypy==1.6.1` [[5ddb83e]](https://github.com/sphuber/aiida-shell/commit/5ddb83eef22d01ca98dc099635a0f63333129d03)
+
+
 ## `v0.5.3` - 2023-06-13
 
 ### Features
