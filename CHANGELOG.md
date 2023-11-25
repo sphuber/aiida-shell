@@ -121,7 +121,6 @@
 
     It is now possible to add a directory to the `outputs` and it will be attached as a `FolderData` output node:
     ```python
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
@@ -139,13 +138,12 @@
     Certain shell commands require input to be passed through the stdin file descriptor.
     To reproduce this behaviour, the file that should be redirected through stdin can be defined using the `metadata.option.filename_stdin` input:
     ```python
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
         nodes={
-            'input': SinglefileData(StringIO('string a'))
+            'input': SinglefileData.from_string('string a')
         },
         metadata={'options': {'filename_stdin': 'input'}}
     )

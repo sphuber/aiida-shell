@@ -1,5 +1,4 @@
 """Tests for the :mod:`aiida_shell.calculations.shell` module."""
-import io
 import pathlib
 
 import pytest
@@ -33,8 +32,8 @@ def test_nodes_single_file_data(generate_calc_job, generate_code):
     inputs = {
         'code': generate_code(),
         'nodes': {
-            'xa': SinglefileData(io.StringIO('content')),
-            'xb': SinglefileData(io.StringIO('content')),
+            'xa': SinglefileData.from_string('content'),
+            'xb': SinglefileData.from_string('content'),
         },
     }
     dirpath, calc_info = generate_calc_job('core.shell', inputs)
@@ -133,9 +132,9 @@ def test_nodes_single_file_data_filename(generate_calc_job, generate_code):
     inputs = {
         'code': generate_code(),
         'nodes': {
-            'xa': SinglefileData(io.StringIO('content'), filename='single_file_a'),
-            'xb': SinglefileData(io.StringIO('content')),
-            'xc': SinglefileData(io.StringIO('content')),
+            'xa': SinglefileData.from_string('content', filename='single_file_a'),
+            'xb': SinglefileData.from_string('content'),
+            'xc': SinglefileData.from_string('content'),
         },
         'filenames': {
             'xb': 'filename_b',
@@ -182,7 +181,7 @@ def test_arguments_files(generate_calc_job, generate_code):
     inputs = {
         'code': generate_code(),
         'arguments': arguments,
-        'nodes': {'file_a': SinglefileData(io.StringIO('content'))},
+        'nodes': {'file_a': SinglefileData.from_string('content')},
     }
     _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
@@ -199,8 +198,8 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
         'code': generate_code(),
         'arguments': arguments,
         'nodes': {
-            'file_a': SinglefileData(io.StringIO('content')),
-            'file_b': SinglefileData(io.StringIO('content')),
+            'file_a': SinglefileData.from_string('content'),
+            'file_b': SinglefileData.from_string('content'),
         },
         'filenames': {
             'file_a': 'custom_filename',
@@ -217,7 +216,7 @@ def test_filename_stdin(generate_calc_job, generate_code, file_regression):
     inputs = {
         'code': generate_code('cat'),
         'arguments': List(['{filename}']),
-        'nodes': {'filename': SinglefileData(io.StringIO('content'))},
+        'nodes': {'filename': SinglefileData.from_string('content')},
         'metadata': {'options': {'filename_stdin': 'filename'}},
     }
     tmp_path, calc_info = generate_calc_job('core.shell', inputs, presubmit=True)

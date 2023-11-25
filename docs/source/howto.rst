@@ -47,15 +47,14 @@ To specify where on the command line the files should be passed, use placeholder
 
 .. code-block:: python
 
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
         arguments='{file_a} {file_b}',
         nodes={
-            'file_a': SinglefileData(StringIO('string a')),
-            'file_b': SinglefileData(StringIO('string b')),
+            'file_a': SinglefileData.from_string('string a'),
+            'file_b': SinglefileData.from_string('string b'),
         }
     )
     print(results['stdout'].get_content())
@@ -74,14 +73,13 @@ If the ``SinglefileData.filename`` was explicitly set when creating the node, th
 
 .. code-block:: python
 
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
         arguments='{file_a}',
         nodes={
-            'file_a': SinglefileData(StringIO('string a'), filename='filename.txt'),
+            'file_a': SinglefileData.from_string('string a', filename='filename.txt'),
         }
     )
     print(results['stdout'].get_content())
@@ -92,14 +90,13 @@ If the filename of the ``SinglefileData`` cannot be controlled, alternatively ex
 
 .. code-block:: python
 
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
         arguments='{file_a}',
         nodes={
-            'file_a': SinglefileData(StringIO('string a')),
+            'file_a': SinglefileData.from_string('string a'),
         },
         filenames={
             'file_a': 'filename.txt'
@@ -299,13 +296,12 @@ To reproduce this behaviour, the file that should be redirected through stdin ca
 
 .. code-block:: python
 
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'cat',
         nodes={
-            'input': SinglefileData(StringIO('string a'))
+            'input': SinglefileData.from_string('string a')
         },
         metadata={'options': {'filename_stdin': 'input'}}
     )
@@ -353,14 +349,13 @@ Any other output files that need to be captured can be defined using the ``outpu
 
 .. code-block:: python
 
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'sort',
         arguments='{input} --output sorted',
         nodes={
-            'input': SinglefileData(StringIO('2\n5\n3')),
+            'input': SinglefileData.from_string('2\n5\n3'),
         },
         outputs=['sorted']
     )
@@ -379,14 +374,13 @@ These output files can be captured by specifying the ``outputs`` as ``['x*']``:
 
 .. code-block:: python
 
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
         'split',
         arguments='-l 1 {single_file}',
         nodes={
-            'single_file': SinglefileData(StringIO('line 0\nline 1\nline 2\n')),
+            'single_file': SinglefileData.from_string('line 0\nline 1\nline 2\n'),
         },
         outputs=['x*']
     )
@@ -405,7 +399,6 @@ The following example uncompresses the tarball and captures the uncompressed fil
 
 .. code-block:: python
 
-    from io import StringIO
     from aiida.orm import SinglefileData
     from aiida_shell import launch_shell_job
     results, node = launch_shell_job(
@@ -555,7 +548,6 @@ which prints ``some output``.
 
     .. code-block:: python
 
-        from io import StringIO
         from json import dumps
         from aiida_shell import launch_shell_job
         from aiida.orm import SinglefileData
@@ -569,7 +561,7 @@ which prints ``some output``.
         results, node = launch_shell_job(
             'cat',
             arguments='{json}',
-            nodes={'json': SinglefileData(StringIO(dumps({'a': 1})))},
+            nodes={'json': SinglefileData.from_string(dumps({'a': 1}))},
             parser=parser,
             metadata={
                 'options': {

@@ -1,6 +1,5 @@
 """Tests for the :mod:`aiida_shell.launch` module."""
 import datetime
-import io
 import json
 import pathlib
 import shutil
@@ -97,8 +96,8 @@ def test_nodes_single_file_data():
     content_a = 'content_a'
     content_b = 'content_b'
     nodes = {
-        'file_a': SinglefileData(io.StringIO(content_a)),
-        'file_b': SinglefileData(io.StringIO(content_b)),
+        'file_a': SinglefileData.from_string(content_a),
+        'file_b': SinglefileData.from_string(content_b),
     }
     arguments = ['{file_a}', '{file_b}']
     results, node = launch_shell_job('cat', arguments=arguments, nodes=nodes)
@@ -201,7 +200,7 @@ def test_arguments_files():
     """Test a shellfunction that specifies positional and keyword CLI arguments interpolated by the ``kwargs``."""
     content = 'line 1\nline 2'
     arguments = ['-n', '1', '{single_file}']
-    nodes = {'single_file': SinglefileData(io.StringIO(content))}
+    nodes = {'single_file': SinglefileData.from_string(content)}
     results, node = launch_shell_job('head', arguments=arguments, nodes=nodes)
 
     assert node.is_finished_ok
@@ -274,7 +273,7 @@ def test_parser_non_stdout():
     results, node = launch_shell_job(
         'cat',
         arguments=['{json}'],
-        nodes={'json': SinglefileData(io.StringIO(json.dumps(dictionary)))},
+        nodes={'json': SinglefileData.from_string(json.dumps(dictionary))},
         parser=parser,
         metadata={'options': {'output_filename': filename, 'additional_retrieve': [filename]}},
     )
