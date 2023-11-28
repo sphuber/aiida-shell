@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import inspect
 import pathlib
+import shlex
 import typing as t
 
 from aiida.common.datastructures import CalcInfo, CodeInfo
@@ -33,7 +34,11 @@ class ShellJob(CalcJob):
         spec.input_namespace('nodes', valid_type=Data, required=False, validator=cls.validate_nodes)
         spec.input('filenames', valid_type=Dict, required=False, serializer=to_aiida_type)
         spec.input(
-            'arguments', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_arguments
+            'arguments',
+            valid_type=List,
+            required=False,
+            serializer=cls.serialize_arguments,
+            validator=cls.validate_arguments,
         )
         spec.input('outputs', valid_type=List, required=False, serializer=to_aiida_type, validator=cls.validate_outputs)
         spec.input(
@@ -113,6 +118,23 @@ class ShellJob(CalcJob):
         spec.exit_code(
             410, 'ERROR_STDERR_NOT_EMPTY', message='The command exited with a zero status but the stderr was not empty.'
         )
+
+    @classmethod
+    def serialize_arguments(cls, value: t.Any) -> List:
+        """Convert the ``value`` to a ``List`` instance if possible.
+
+        :param value: The aruguments to serialize to a ``List`` instance.
+        :raises TypeError: If the object is not a string or a list.
+        """
+        if isinstance(value, str):
+            arguments = shlex.split(value)
+        else:
+            arguments = value
+
+        if isinstance(arguments, list):
+            return List(arguments)
+
+        raise TypeError(f'`arguments` should be a string or a list of strings but got: {type(value)}')
 
     @classmethod
     def serialize_parser(cls, value: t.Any) -> EntryPointData | PickledData:

@@ -1,5 +1,6 @@
 """Tests for the :mod:`aiida_shell.calculations.shell` module."""
 import pathlib
+import shlex
 
 import pytest
 from aiida.common.datastructures import CodeInfo
@@ -166,13 +167,22 @@ def test_arguments_invalid(generate_calc_job, generate_code, arguments, exceptio
         generate_calc_job('core.shell', inputs)
 
 
-def test_arguments(generate_calc_job, generate_code):
+@pytest.mark.parametrize(
+    'arguments',
+    (
+        '-a --flag local/filepath',
+        ['-a', '--flag', 'local/filepath'],
+    ),
+)
+def test_arguments(generate_calc_job, generate_code, arguments):
     """Test the ``arguments`` input."""
-    arguments = List(['-a', '--flag', 'local/filepath'])
     inputs = {'code': generate_code(), 'arguments': arguments}
     _, calc_info = generate_calc_job('core.shell', inputs)
     code_info = calc_info.codes_info[0]
-    assert code_info.cmdline_params == arguments.get_list()
+    if isinstance(arguments, str):
+        assert code_info.cmdline_params == shlex.split(arguments)
+    else:
+        assert code_info.cmdline_params == arguments
 
 
 def test_arguments_files(generate_calc_job, generate_code):
