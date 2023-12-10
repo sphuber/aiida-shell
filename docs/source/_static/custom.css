@@ -61,3 +61,44 @@ html[data-theme=dark] .highlight .mi {
     color: #0096d2;
     font-weight: bold;
 }
+
+.sd-card-hover:hover {
+    border-color: var(--pst-color-primary);
+    transform: none;
+}
+
+.aiida-green {
+    color: #30b808;
+}
+
+.aiida-blue {
+    color: #0096d2;
+}
+
+.aiida-orange {
+    color: #fe7d17;
+}
+
+.aiida-red {
+    color: rgb(192, 11, 80);
+}
+
+img.logo-shell {
+    width: 20px;
+    padding-bottom: 3px;
+    margin-right: 3px;
+}
+
+.sd-card-footer {
+    padding-top: 0rem;
+    border-top: none !important;
+}
+
+.sd-card-footer table {
+    margin-bottom: 0rem;
+    border-color: transparent;
+}
+
+.sd-card-footer table td:last-child {
+    text-align: right;
+}

@@ -9,7 +9,7 @@ project = 'aiida-shell'
 copyright = 'Sebastiaan P. Huber 2022 - 2023'
 release = aiida_shell.__version__
 
-extensions = ['myst_parser', 'sphinx_copybutton', 'sphinx_click', 'sphinx.ext.intersphinx']
+extensions = ['myst_parser', 'sphinx_copybutton', 'sphinx_click', 'sphinx_design', 'sphinx.ext.intersphinx']
 
 html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
@@ -33,7 +33,22 @@ html_css_files = [
     'custom.css',
 ]
 html_domain_indices = True
-# html_logo = 'images/logo-text.svg'
+html_sidebars = {
+    'examples': [],
+    'examples/*': [],
+}
+
+myst_enable_extensions = [
+    'attrs_inline',
+    'colon_fence',
+    'deflist',
+    'substitution',
+]
+
+myst_substitutions = {
+    'logo_shell': '<img src="_static/logo-shell.svg" alt="aiida-shell" class="logo-shell">',
+}
+
 
 # Settings for the `sphinx_copybutton` extension
 copybutton_selector = 'div:not(.no-copy)>div.highlight pre'

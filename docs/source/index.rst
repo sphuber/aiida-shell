@@ -82,4 +82,5 @@ Please refer to the `CITATION.cff <https://github.com/sphuber/aiida-shell/blob/m
 
    installation
    howto
+   examples
    changelog
