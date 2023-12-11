@@ -423,6 +423,8 @@ The contents of the folder can be retrieved from the node as follows:
             content = handle.read()
 
 
+.. _how-to:defining-a-specific-computer:
+
 Defining a specific computer
 ============================
 
@@ -460,6 +462,37 @@ The ``command`` argument also accepts a pre-configured code instance directly:
 
 This approach can be used as an alternative to the previous example where the target computer is specified through the `metadata` argument.
 
+
+Running with MPI
+================
+
+AiiDA supports running codes that are compiled with support for the Message Passing Interface (MPI).
+It can be enabled by setting the ``metadata.options.withmpi`` input to ``True``:
+
+.. code-block:: python
+
+    from aiida_shell import launch_shell_job
+    results, node = launch_shell_job(
+        'parallel-executable',
+        metadata={
+            'options': {
+                'withmpi': True,
+                'resources': {
+                    'num_machines': 2,
+                    'num_mpiprocs_per_machine': 3,
+                }
+            }
+        }
+    )
+
+When MPI is enabled, by default AiiDA assumes `Open MPI <https://www.open-mpi.org/>`_ and calls the command prefixed with ``mpirun -np {tot_num_mpiprocs}``.
+The ``{tot_num_mpiprocs}`` placeholder is replaced with the product of the ``num_machines`` and ``num_mpiprocs_per_machine`` keys of the ``metadata.options.resources`` input, i.e., in this example the MPI line would be ``mpirun -np 6``.
+
+.. note::
+
+    If the target command does not use Open MPI but some other implementation, a computer can be configured to customize the ``mpirun_command`` attribute.
+    For example, on clusters with the SLURM job scheduler, the MPI run command could be set to ``srun -n {tot_num_mpiprocs}``.
+    Once the computer is correctly set up and configured, it can be passed to the ``metadata.options.computer`` input.
 
 Running many shell jobs in parallel
 ===================================
