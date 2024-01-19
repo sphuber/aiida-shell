@@ -81,6 +81,11 @@ class ShellJob(CalcJob):
         options['resources'].default = {'num_machines': 1}  # type: ignore[index]
 
         spec.outputs.dynamic = True
+        spec.output('stdout', valid_type=SinglefileData, required=False,
+                    help='The file containing the standard output of the shell command.')
+        spec.output('stderr', valid_type=SinglefileData, required=False,
+                    help='The file containing the standard error of the shell command.')
+
 
         spec.exit_code(
             300,
