@@ -79,9 +79,9 @@ def launch_shell_job(  # noqa: PLR0913
         current_process = Process.current()
         if current_process is not None and isinstance(current_process, WorkChain):
             return {}, current_process.submit(ShellJob, **inputs)
-        return {}, launch.submit(ShellJob, **inputs)
+        return {}, launch.submit(ShellJob, inputs)
 
-    results, node = launch.run_get_node(ShellJob, **inputs)
+    results, node = launch.run_get_node(ShellJob, inputs)
 
     return {label: node for label, node in results.items() if label not in ('retrieved', 'remote_folder')}, node
 

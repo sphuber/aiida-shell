@@ -80,7 +80,7 @@ class ShellParser(Parser):
         except FileNotFoundError:
             stderr = ''
         else:
-            stderr = node_stderr.get_content()
+            stderr = node_stderr.get_content()  # type: ignore[assignment]
             self.out(ShellJob.FILENAME_STDERR, node_stderr)
 
         filename_stdout = self.node.get_option('output_filename') or ShellJob.FILENAME_STDOUT

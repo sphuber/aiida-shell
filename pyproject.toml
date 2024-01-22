@@ -19,7 +19,7 @@ classifiers = [
   'Topic :: Scientific/Engineering'
 ]
 dependencies = [
-  'aiida-core~=2.4',
+  'aiida-core~=2.5',
   'dill'
 ]
 dynamic = ['description', 'version']
@@ -94,7 +94,8 @@ module = [
 
 [tool.pytest.ini_options]
 filterwarnings = [
-  'ignore:Creating AiiDA configuration folder.*:UserWarning'
+  'ignore:Creating AiiDA configuration folder.*:UserWarning',
+  'ignore:Object of type .* not in session, .* operation along .* will not proceed:sqlalchemy.exc.SAWarning'
 ]
 
 [tool.ruff]
