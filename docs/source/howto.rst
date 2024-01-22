@@ -613,3 +613,39 @@ which prints ``some output``.
     See the `AiiDA documentation <https://aiida.readthedocs.io/projects/aiida-core/en/latest/howto/plugins_develop.html?highlight=entry%20point#registering-plugins-through-entry-points>`_ for details on how to register entry points.
     For example, if the parser is registered with the name ``some.parser`` in the group ``aiida.parsers``, the ``parser`` input will accept ``aiida.parsers:some.parser``.
     The entry point will automatically be validated and wrapped in a :class:`aiida_shell.data.entry_point.EntryPointData`.
+
+
+Customizing run environment
+===========================
+
+By default, ``aiida-shell`` runs the specified command in a regular bash shell.
+The shell will inherit the default environment of the system user, as if they would have launched an interactive shell.
+It is possible to customize this environment by specifying bash commands to run before the actual command is invoked.
+These commands can be specified in the metadata option ``prepend_text``.
+An example use case is to load a particular Python environment, using conda for example, in which the command should run:
+
+.. code-block:: python
+
+    from aiida_shell import launch_shell_job
+    results, node = launch_shell_job(
+        'some_command_in_some_conda_env',
+        metadata={
+            'option': {
+                'prepend_text': 'conda activate some-conda-env'
+            }
+        }
+    )
+
+The resulting bash script that is executed will look something like the following:
+
+.. code-block:: bash
+
+    #!/usr/bin/env bash
+    exec > _scheduler-stdout.txt
+    exec 2> _scheduler-stderr.txt
+
+    conda activate some-conda-env
+
+    some_command_in_some_conda_env > 'stdout' 2> 'stderr'
+
+    echo $? > status
