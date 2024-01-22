@@ -425,6 +425,6 @@ class ShellJob(CalcJob):
             filepath = dirpath
 
         filepath.parent.mkdir(parents=True, exist_ok=True)
-        node.base.repository.copy_tree(filepath)
+        node.copy_tree(filepath)
 
         return filename
