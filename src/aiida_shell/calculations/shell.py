@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import inspect
 import pathlib
+import secrets
 import shlex
 import typing as t
 
@@ -75,6 +76,7 @@ class ShellJob(CalcJob):
             'opposed to copying the contents to the working directory.',
         )
         spec.inputs['code'].required = True
+        spec.inputs.validator = cls.validate_inputs
 
         options = spec.inputs['metadata']['options']  # type: ignore[index]
         options['parser_name'].default = 'core.shell'  # type: ignore[index]
@@ -153,6 +155,23 @@ class ShellJob(CalcJob):
             return EntryPointData(entry_point=entry_point)
 
         raise TypeError(f'`value` should be a string or callable but got: {type(value)}')
+
+    @classmethod
+    def validate_inputs(cls, value: t.Any, _: t.Any) -> str | None:
+        """Validate the top-level input namespace."""
+        filename_stdout = value['metadata'].get('options', {}).get('output_filename', cls.FILENAME_STDOUT)
+        filename_stderr = cls.FILENAME_STDERR
+        filename_status = cls.FILENAME_STATUS
+
+        for key, filename in (value.get('filenames') or {}).items():
+            for filename_output in (filename_stdout, filename_stderr, filename_status):
+                if filename == filename_output:
+                    return (
+                        f'Input filename `{filename}` for node `{key}` overlaps with the output filename '
+                        f'`{filename_output}`. Please specify a different input name.'
+                    )
+
+        return None
 
     @classmethod
     def validate_parser(cls, value: t.Any, _: t.Any) -> str | None:
@@ -338,6 +357,7 @@ class ShellJob(CalcJob):
         formatter = Formatter()
         processed_arguments = []
         processed_nodes = []
+        prepared_filenames = self.prepare_filenames(nodes, filenames)
 
         for argument in arguments:
             # Parse the argument for placeholders.
@@ -362,11 +382,13 @@ class ShellJob(CalcJob):
             node = nodes[placeholder]
 
             if isinstance(node, SinglefileData):
-                filename = self.write_single_file_data(dirpath, node, placeholder, filenames)
+                filename = prepared_filenames[placeholder]
+                self.write_single_file_data(node, dirpath, filename)
                 argument_interpolated = argument.format(**{placeholder: filename})
             elif isinstance(node, FolderData):
-                filename = self.write_folder_data(dirpath, node, placeholder, filenames)
-                argument_interpolated = argument.format(**{placeholder: filename})
+                filename = prepared_filenames[placeholder]
+                self.write_folder_data(node, dirpath, filename)
+                argument_interpolated = argument.format(**{placeholder: filename or placeholder})
             elif isinstance(node, RemoteData):
                 self.handle_remote_data(node)
             else:
@@ -380,51 +402,93 @@ class ShellJob(CalcJob):
                 continue
 
             if isinstance(node, SinglefileData):
-                self.write_single_file_data(dirpath, node, key, filenames)
+                self.write_single_file_data(node, dirpath, prepared_filenames[key])
             elif isinstance(node, FolderData):
-                self.write_folder_data(dirpath, node, key, filenames)
+                self.write_folder_data(node, dirpath, prepared_filenames[key])
 
         return processed_arguments
 
+    @property
+    def filenames_reserved(self) -> tuple[str, ...]:
+        """Return a tuple of filenames that are reserved in the working directory.
+
+        These files are reserved by the plugin and therefore cannot be used by any files that are part of the inputs.
+
+        :returns: Tuple of filenames.
+        """
+        filename_stdout = self.node.get_option('output_filename') or self.FILENAME_STDOUT
+        filename_stderr = self.FILENAME_STDERR
+        filename_status = self.FILENAME_STATUS
+        return (filename_stdout, filename_stderr, filename_status)
+
+    def prepare_filenames(self, nodes: dict[str, SinglefileData], filenames: dict[str, str]) -> dict[str, str]:
+        """Return the mapping of key from the ``nodes`` input to the relative filename to which it should be written.
+
+        :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
+        :param filenames: A dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
+        :returns: Mapping of node key to its target relative filename.
+        """
+        mapping = {}
+
+        for key, node in nodes.items():
+            if isinstance(node, SinglefileData):
+                default_filename = (
+                    node.filename if node.filename and node.filename != SinglefileData.DEFAULT_FILENAME else key
+                )
+                filename: str = filenames.get(key, default_filename)
+            elif isinstance(node, FolderData):
+                filename = filenames.get(key, None)
+
+                # Check that the first-level contents of the folder don't overlap with the reserved filenames. If the
+                # case, an exception unfortunately needs to be raised as the engine will copy the contents and not the
+                # plugin, so the latter cannot change the filename as is done for the direct target of the input node
+                # done below.
+                for f in node.list_object_names():
+                    if f in self.filenames_reserved:
+                        raise RuntimeError(
+                            f'node `{key}` contains the file `{f}` which overlaps with a reserved output filename.'
+                        )
+            else:
+                continue
+
+            if filename in self.filenames_reserved:
+                filename_alt = f'{filename}_{secrets.token_hex(10)}'
+                self.logger.warning(
+                    f'filename `{filename}` for node `{key}` overlaps with a reserved output filename. '
+                    f'Changing it to `{filename_alt}`.'
+                )
+                filename = filename_alt
+
+            mapping[key] = filename
+
+        return mapping
+
     @staticmethod
-    def write_single_file_data(dirpath: pathlib.Path, node: SinglefileData, key: str, filenames: dict[str, str]) -> str:
+    def write_single_file_data(node: SinglefileData, dirpath: pathlib.Path, filename: str) -> None:
         """Write the content of a ``SinglefileData`` node to ``dirpath``.
 
-        :param dirpath: A temporary folder on the local file system.
         :param node: The node whose content to write.
-        :param key: The relative filename to use.
-        :param filenames: Mapping that can provide explicit filenames for the given key.
-        :returns: The relative filename used to write the content to ``dirpath``.
+        :param dirpath: A temporary folder on the local file system.
+        :param filename: The relative filename to use.
         """
-        default_filename = node.filename if node.filename and node.filename != SinglefileData.DEFAULT_FILENAME else key
-        filename: str = filenames.get(key, default_filename)
         filepath = dirpath / filename
-
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         with node.open(mode='rb') as handle:
             filepath.write_bytes(handle.read())
 
-        return filename
-
     @staticmethod
-    def write_folder_data(dirpath: pathlib.Path, node: FolderData, key: str, filenames: dict[str, str]) -> str:
+    def write_folder_data(node: FolderData, dirpath: pathlib.Path, filename: str | None) -> None:
         """Write the content of a ``FolderData`` node to ``dirpath``.
 
-        :param dirpath: A temporary folder on the local file system.
         :param node: The node whose content to write.
-        :param key: The relative filename to use.
-        :param filenames: Mapping that can provide explicit filenames for the given key.
-        :returns: The relative filename used to write the content to ``dirpath``.
+        :param dirpath: A temporary folder on the local file system.
+        :param filename: The relative filename to use.
         """
-        if key in filenames:
-            filename = filenames[key]
+        if filename is not None:
             filepath = dirpath / filename
         else:
-            filename = key
             filepath = dirpath
 
         filepath.parent.mkdir(parents=True, exist_ok=True)
         node.copy_tree(filepath)
-
-        return filename

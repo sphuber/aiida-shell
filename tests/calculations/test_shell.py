@@ -54,7 +54,7 @@ def test_nodes_folder_data(generate_calc_job, generate_code, tmp_path):
 
     folder_flat = FolderData(tree=tmp_path.absolute())
     folder_nested = FolderData()
-    folder_nested.base.repository.put_object_from_tree(tmp_path.absolute(), 'dir')
+    folder_nested.put_object_from_tree(tmp_path.absolute(), 'dir')
     inputs = {
         'code': generate_code(),
         'arguments': ['{nested}', '{nested_explicit}'],
@@ -373,3 +373,60 @@ def test_parser_over_daemon(generate_code, submit_and_await):
     node = submit_and_await(builder)
     assert node.is_finished_ok, (node.exit_status, node.exit_message)
     assert node.outputs.string == value
+
+
+def test_input_output_filename_overlap(generate_calc_job, generate_code, tmp_path, caplog):
+    """Test functionality when input and output filenames overlap."""
+    code = generate_code()
+
+    # If an overlapping name is explicitly defined in the ``filenames`` input, then an exception is raised.
+    with pytest.raises(ValueError, match=r'Input filename .* for node `file` overlaps .*'):
+        generate_calc_job(
+            'core.shell',
+            inputs={
+                'code': code,
+                'nodes': {'file': SinglefileData.from_string('content', filename='stdout')},
+                'filenames': {'file': 'stdout'},
+            },
+        )
+
+    # Same goes for ``FolderData`` nodes.
+    with pytest.raises(ValueError, match=r'Input filename .* for node `folder` overlaps .*'):
+        generate_calc_job(
+            'core.shell',
+            inputs={
+                'code': code,
+                'nodes': {'folder': FolderData()},
+                'filenames': {'folder': 'stdout'},
+            },
+        )
+
+    # If the filename clash is due to an "implicit" filename, instead of raising, the filename of the node should be
+    # automatically made unique and a warning logged to make the user aware.
+    dirpath, calc_info = generate_calc_job(
+        'core.shell',
+        inputs={
+            'code': code,
+            'nodes': {'file': SinglefileData.from_string('content', filename='stdout')},
+        },
+    )
+    code_info = calc_info.codes_info[0]
+    filenames = [p.name for p in dirpath.iterdir()]
+    assert code_info.stdout_name not in filenames
+    assert code_info.stderr_name not in filenames
+    assert 'filename `stdout` for node `file` overlaps' in caplog.records[0].message
+
+    # If the contents of a ``FolderData`` overlap with a reserved filename, an exception is raised. This is done because
+    # not doing everything will most likely fail the calculation as some input files will be overwritten. The plugin can
+    # also not automatically solve the problem by renaming the overlapping file/directory, as is done in the case of the
+    # ``SinglefileData``, because it is not the plugin copying the content of the ``FolderData`` but the engine.
+    (tmp_path / 'stdout').mkdir()
+    folder_data = FolderData(tree=tmp_path)
+    with pytest.raises(RuntimeError, match=r'node `.*` contains the file .* which overlaps with a reserved .*'):
+        dirpath, calc_info = generate_calc_job(
+            'core.shell',
+            inputs={
+                'code': code,
+                'nodes': {'folder': folder_data},
+            },
+        )

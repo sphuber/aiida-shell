@@ -61,6 +61,16 @@ To specify where on the command line the files should be passed, use placeholder
 
 which prints ``string astring b``.
 
+.. note::
+
+    The filename with which the file is written to the working directory is taken from the ``SinglefileData.filename`` property.
+    This is set when the node is created, e.g., ``SinglefileData.from_string('content', filename='some_filename.txt')``.
+    If the ``filename`` property is the default, the key of the node in the ``nodes`` dictionary is used instead.
+
+.. warning::
+
+    If the filename overlaps with a reserved filename (i.e. ``stdout``, ``stderr`` or ``status``), the filename will be automatically changed to a unique filename by appending a random suffix.
+
 
 Running a shell command with files as arguments with specific filenames
 =======================================================================
@@ -108,7 +118,10 @@ which prints ``string a``.
 Filenames specified in the ``filenames`` input will override the filename of the ``SinglefileData`` nodes.
 Any parent directories in the filepath, for example ``some/nested/path`` in the filename ``some/nested/path/file.txt``, will be automatically created.
 
-The output filename can be anything except for ``stdout``, ``stderr`` and ``status``, which are reserved filenames.
+.. warning::
+
+    The output filename can be anything except for ``stdout``, ``stderr`` and ``status``, which are reserved filenames.
+    If these names are chosen anyway, a validation error is raised when the job is launched.
 
 
 Running a shell command with folders as arguments
