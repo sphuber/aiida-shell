@@ -28,6 +28,7 @@ def launch_shell_job(  # noqa: PLR0913
     parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | str | None = None,
     metadata: dict[str, t.Any] | None = None,
     submit: bool = False,
+    resolve_command: bool = True,
 ) -> tuple[dict[str, Data], ProcessNode]:
     """Launch a :class:`aiida_shell.ShellJob` job for the given command.
 
@@ -45,8 +46,12 @@ def launch_shell_job(  # noqa: PLR0913
         callable.
     :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
     :param submit: Boolean, if ``True`` will submit the job to the daemon instead of running in current interpreter.
+    :param resolve_command: Whether to resolve the command to the absolute path of the executable. If set to ``True``,
+        the ``which`` command is executed on the target computer to attempt and determine the absolute path. Otherwise,
+        the command is set as the ``filepath_executable`` attribute of the created ``AbstractCode`` instance.
     :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
-    :raises ValueError: If the absolute path of the command on the computer could not be determined.
+    :raises ValueError: If ``resolve_command=True`` and the absolute path of the command on the computer could not be
+        determined.
     :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``. The
         results dictionary intentionally doesn't include the ``retrieved`` and ``remote_folder`` outputs as they are
         generated for each ``CalcJob`` and typically are not of interest to a user running ``launch_shell_job``. In
@@ -55,7 +60,7 @@ def launch_shell_job(  # noqa: PLR0913
     computer = (metadata or {}).get('options', {}).pop('computer', None)
 
     if isinstance(command, str):
-        code = prepare_code(command, computer)
+        code = prepare_code(command, computer, resolve_command)
     else:
         lang.type_check(command, AbstractCode)
         code = command
@@ -86,14 +91,18 @@ def launch_shell_job(  # noqa: PLR0913
     return {label: node for label, node in results.items() if label not in ('retrieved', 'remote_folder')}, node
 
 
-def prepare_code(command: str, computer: Computer | None = None) -> AbstractCode:
+def prepare_code(command: str, computer: Computer | None = None, resolve_command: bool = True) -> AbstractCode:
     """Prepare a code for the given command and computer.
 
-    This will automatically prepare the computer
+    This will automatically prepare the computer.
 
     :param command: The command that the code should represent. Can be the relative executable name or absolute path.
     :param computer: The computer on which the command should be run. If not defined the localhost will be used.
+    :param resolve_command: Whether to resolve the command to the absolute path of the executable. If set to ``True``,
+        the ``which`` command is executed on the target computer to attempt and determine the absolute path. Otherwise,
+        the command is set as the ``filepath_executable`` attribute of the created ``AbstractCode`` instance.
     :return: A :class:`aiida.orm.nodes.code.abstract.AbstractCode` instance.
+    :raises ValueError: If ``resolve_command=True`` and the code fails to determine the absolute path of the command.
     """
     computer = prepare_computer(computer)
     code_label = f'{command}@{computer.label}'
@@ -103,14 +112,17 @@ def prepare_code(command: str, computer: Computer | None = None) -> AbstractCode
     except exceptions.NotExistent as exception:
         LOGGER.info('No code exists yet for `%s`, creating it now.', code_label)
 
-        with computer.get_transport() as transport:
-            status, stdout, stderr = transport.exec_command_wait(f'which {command}')
-            executable = stdout.strip()
+        if resolve_command:
+            with computer.get_transport() as transport:
+                status, stdout, stderr = transport.exec_command_wait(f'which {command}')
+                executable = stdout.strip()
 
-            if status != 0:
-                raise ValueError(
-                    f'failed to determine the absolute path of the command on the computer: {stderr}'
-                ) from exception
+                if status != 0:
+                    raise ValueError(
+                        f'failed to determine the absolute path of the command on the computer: {stderr}'
+                    ) from exception
+        else:
+            executable = command
 
         code = ShellCode(  # type: ignore[assignment]
             label=command, computer=computer, filepath_executable=executable, default_calc_job_plugin='core.shell'

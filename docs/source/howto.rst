@@ -615,6 +615,33 @@ which prints ``some output``.
     The entry point will automatically be validated and wrapped in a :class:`aiida_shell.data.entry_point.EntryPointData`.
 
 
+.. _how-to:keep-command-path-relative:
+
+Keeping the command path relative
+=================================
+
+By default, :meth:`~aiida_shell.launch.launch_shell_job` automatically converts the provided command to the absolute filepath of the corresponding executable.
+This serves two purposes:
+
+1. A check to make sure the command exists on the specified computer
+2. Increases the quality of provenance
+
+The executable that a relative command resolves to on the target computer can change as a function of the environment, or simply change over time.
+Storing the actual absolute filepath of the executable avoids this, although it remains of course vulnerable to the executable itself actually being changed over time.
+
+Nevertheless, there may be use-cases where the resolving of the command is not desirable.
+To skip this step and keep the command as specified, set the ``resolve_command`` argument to ``False``:
+
+.. code-block:: python
+
+    from aiida_shell import launch_shell_job
+    results, node = launch_shell_job('date')
+    assert str(node.inputs.code.filepath_executable) == '/usr/bin/date'
+
+    results, node = launch_shell_job('date', resolve_command=False)
+    assert str(node.inputs.code.filepath_executable) == 'date'
+
+
 Customizing run environment
 ===========================
 

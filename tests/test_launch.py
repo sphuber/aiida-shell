@@ -239,6 +239,20 @@ def test_submit_inside_workfunction(submit_and_await):
     assert isinstance(results['stdout'], SinglefileData)
 
 
+@pytest.mark.parametrize(
+    'resolve_command, executable',
+    (
+        (True, '/usr/bin/date'),
+        (False, 'date'),
+    ),
+)
+@pytest.mark.usefixtures('aiida_profile_clean')
+def test_resolve_command(resolve_command, executable):
+    """Test the ``resolve_command`` argument."""
+    _, node = launch_shell_job('date', resolve_command=resolve_command)
+    assert str(node.inputs.code.filepath_executable) == executable
+
+
 def test_parser():
     """Test the ``parser`` argument."""
 
