@@ -9,7 +9,14 @@ project = 'aiida-shell'
 copyright = 'Sebastiaan P. Huber 2022 - 2023'
 release = aiida_shell.__version__
 
-extensions = ['myst_parser', 'sphinx_copybutton', 'sphinx_click', 'sphinx_design', 'sphinx.ext.intersphinx']
+extensions = [
+    'myst_parser',
+    'sphinx_copybutton',
+    'sphinx_click',
+    'sphinx_design',
+    'sphinx.ext.intersphinx',
+    'sphinx_favicon',
+]
 
 html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
@@ -22,6 +29,12 @@ html_theme_options = {
         'image_light': '_static/logo-text.svg',
         'image_dark': '_static/logo-text-light.svg',
     },
+    'favicons': [
+        {
+            'rel': 'icon',
+            'href': 'logo-shell.svg',
+        },
+    ],
 }
 html_context = {
     'github_user': 'sphuber',
