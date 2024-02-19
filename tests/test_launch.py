@@ -6,9 +6,9 @@ import shutil
 
 import pytest
 from aiida.engine import WorkChain, run_get_node, workfunction
-from aiida.orm import AbstractCode, Float, Int, RemoteData, SinglefileData, Str
+from aiida.orm import AbstractCode, Computer, Float, Int, RemoteData, SinglefileData, Str
 from aiida_shell.calculations.shell import ShellJob
-from aiida_shell.launch import launch_shell_job
+from aiida_shell.launch import launch_shell_job, prepare_computer
 
 
 class ShellWorkChain(WorkChain):
@@ -294,3 +294,27 @@ def test_parser_non_stdout():
 
     assert node.is_finished_ok
     assert results['json'] == dictionary
+
+
+@pytest.mark.usefixtures('aiida_profile_clean')
+@pytest.mark.parametrize('scheduler_type', ('core.direct', 'core.sge'))
+def test_preexisting_localhost_no_default_mpiprocs_per_machine(generate_computer, scheduler_type, caplog):
+    """Test that ``prepare_computer`` sets ``default_mpiprocs_per_machine`` if not set on pre-existing computer.
+
+    If the ``localhost`` is created before ``prepare_computer`` is ever called, it is possible that the property
+    ``default_mpiprocs_per_machine`` is not set. This would result the ``ShellJob`` validation to fail if the scheduler
+    type has a job resource class that is a subclass of :class:`~aiida.schedulers.datastructures.NodeNumberJobResource`.
+    """
+    computer = generate_computer(scheduler_type=scheduler_type)
+    computer.set_default_mpiprocs_per_machine(None)
+    assert computer.get_default_mpiprocs_per_machine() is None
+
+    prepare_computer()
+
+    if scheduler_type == 'core.direct':
+        assert computer.get_default_mpiprocs_per_machine() == 1
+        assert 'already exist but does not define `default_mpiprocs_per_machine' in caplog.records[0].message
+    else:
+        assert computer.get_default_mpiprocs_per_machine() is None
+
+    Computer.collection.delete(computer.pk)
