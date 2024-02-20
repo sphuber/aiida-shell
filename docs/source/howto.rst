@@ -305,7 +305,7 @@ This is normally accomplished as follows:
 
     cat < input.txt
 
-To reproduce this behaviour, the file that should be redirected through stdin can be defined using the ``metadata.option.filename_stdin`` input:
+To reproduce this behaviour, the file that should be redirected through stdin can be defined using the ``metadata.options.filename_stdin`` input:
 
 .. code-block:: python
 
@@ -336,7 +336,7 @@ This is normally accomplished as follows:
 
     date > stdout 2>&1
 
-To reproduce this behaviour, set the ``metadata.option.redirect_stderr`` input to ``True``:
+To reproduce this behaviour, set the ``metadata.options.redirect_stderr`` input to ``True``:
 
 .. code-block:: python
 
@@ -670,7 +670,7 @@ An example use case is to load a particular Python environment, using conda for 
     results, node = launch_shell_job(
         'some_command_in_some_conda_env',
         metadata={
-            'option': {
+            'options': {
                 'prepend_text': 'conda activate some-conda-env'
             }
         }
