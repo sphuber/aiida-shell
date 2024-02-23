@@ -143,6 +143,8 @@ def prepare_computer(computer: Computer | None = None) -> Computer:
     :return: A configured computer.
     :raises TypeError: If the provided computer is not an instance of :class:`aiida.orm.Computer`.
     """
+    from aiida.schedulers.datastructures import NodeNumberJobResource
+
     if computer is not None and not isinstance(computer, Computer):
         raise TypeError(f'`metadata.options.computer` should be instance of `Computer` but got: {type(computer)}.')
 
@@ -163,6 +165,16 @@ def prepare_computer(computer: Computer | None = None) -> Computer:
             computer.configure(safe_interval=0.0)
             computer.set_minimum_job_poll_interval(0.0)
             computer.set_default_mpiprocs_per_machine(1)
+        else:
+            if (
+                issubclass(computer.get_scheduler().job_resource_class, NodeNumberJobResource)
+                and computer.get_default_mpiprocs_per_machine() is None
+            ):
+                computer.set_default_mpiprocs_per_machine(1)
+                LOGGER.warning(
+                    f'{computer} already exist but does not define `default_mpiprocs_per_machine`. '
+                    'Setting it to 1 since otherwise the `ShellJob` would fail during input validation.'
+                )
 
     default_user = computer.backend.default_user
 
