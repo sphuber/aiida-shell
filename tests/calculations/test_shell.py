@@ -4,6 +4,7 @@ import shlex
 
 import pytest
 from aiida.common.datastructures import CodeInfo
+from aiida.engine import run_get_node
 from aiida.orm import Data, Float, FolderData, Int, List, RemoteData, SinglefileData, Str
 from aiida_shell.calculations.shell import ShellJob
 from aiida_shell.data import EntryPointData, PickledData
@@ -430,3 +431,30 @@ def test_input_output_filename_overlap(generate_calc_job, generate_code, tmp_pat
                 'nodes': {'folder': folder_data},
             },
         )
+
+
+def test_remote_folder_copying_order(generate_code, aiida_localhost, tmp_path):
+    """Test that files in ``RemoteData`` input nodes do not overwrite files written by the ``ShellJob`` itself."""
+    filename_submit_script = ShellJob.spec().inputs['metadata']['options']['submit_script_filename'].default
+
+    # Create a ``RemoteData`` node containing a file with the default submit script name. The content is ``SENTINEL``
+    # so that it can be easily detected in the final assert of this test.
+    dirpath = tmp_path / 'remote'
+    dirpath.mkdir()
+    (dirpath / filename_submit_script).write_text('SENTINEL')
+
+    inputs = {
+        'code': generate_code(),
+        'arguments': [],
+        'nodes': {
+            'remote': RemoteData(remote_path=str(dirpath.absolute()), computer=aiida_localhost),
+        },
+    }
+    _, node = run_get_node(ShellJob, inputs)
+
+    # Now retrieve the content of the submit script that was written to the working directory. It should not be equal
+    # to the content of the submit script in the ``remote`` input node which would mean it overwrote the submit script
+    # of the shell job itself.
+    filepath_submit_script = dirpath / 'output'
+    node.outputs.remote_folder.getfile(filename_submit_script, str(filepath_submit_script))
+    assert filepath_submit_script.read_text() != 'SENTINEL'

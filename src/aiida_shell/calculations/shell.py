@@ -7,7 +7,7 @@ import secrets
 import shlex
 import typing as t
 
-from aiida.common.datastructures import CalcInfo, CodeInfo
+from aiida.common.datastructures import CalcInfo, CodeInfo, FileCopyOrder
 from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
 from aiida.orm import Data, Dict, FolderData, List, RemoteData, SinglefileData, to_aiida_type
@@ -308,6 +308,7 @@ class ShellJob(CalcJob):
         calc_info.remote_symlink_list = remote_symlink_list
         calc_info.retrieve_temporary_list = retrieve_list
         calc_info.provenance_exclude_list = [p.name for p in dirpath.iterdir()]
+        calc_info.file_copy_order = FileCopyOrder.REMOTE_LOCAL_SANDBOX
 
         return calc_info
 
