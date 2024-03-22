@@ -146,7 +146,7 @@ class ShellJob(CalcJob):
         :raises TypeError: If the object is not a string or callable.
         """
         if callable(value):
-            return PickledData(value)
+            return PickledData(value, recurse=True)
 
         if isinstance(value, str):
             from aiida.plugins.entry_point import get_entry_point_from_string
