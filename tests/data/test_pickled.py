@@ -28,3 +28,12 @@ def test_load(obj):
 
     loaded = load_node(node.pk)
     assert loaded.load() == obj
+
+
+def test_kwargs():
+    """Test that kwargs passed to the constructor are forwarded to the pickler and stored in node's attributes."""
+    pickled = PickledData(Node, recurse=True).store()
+    assert pickled.base.attributes.get(PickledData.KEY_ATTRIBUTES_PICKLER_KWARGS) == {'recurse': True}
+
+    with pytest.raises(TypeError, match="got an unexpected keyword argument 'unsupported_kwarg'"):
+        pickled = PickledData(Node, unsupported_kwarg=True).store()

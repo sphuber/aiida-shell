@@ -26,25 +26,26 @@ class PickledData(SinglefileData):
     KEY_ATTRIBUTES_UNPICKLER_VERSION: str = 'pickler_version'
     """Attribute key that stores the version of the package whose function can unpickle this object."""
 
+    KEY_ATTRIBUTES_PICKLER_KWARGS: str = 'pickler_kwargs'
+    """Attribute key that stores the keyword arguments passed to the constructor which are forwarded to the pickler."""
+
     PICKLER: t.Callable[[t.Any], bytes] = dill.dumps
     """The method used to pickle the Python object."""
 
     UNPICKLER: t.Callable[[bytes], t.Any] = dill.loads
     """The method used to unpickle the Python object."""
 
-    def __init__(self, obj: t.Any):
+    def __init__(self, obj: t.Any, **kwargs: t.Any):
         """Construct a new instance by pickling the provided Python object.
 
         :raises TypeError: If the Python object cannot be pickled.
         """
-        try:
-            pickled = self.get_pickler()(obj)
-        except TypeError as exception:
-            raise TypeError(f'object of type `{type(obj)}` is not supported') from exception
+        pickled = self.get_pickler()(obj, **kwargs)
 
         super().__init__(file=io.BytesIO(pickled))
 
         self._set_unpickler_information()
+        self.base.attributes.set(self.KEY_ATTRIBUTES_PICKLER_KWARGS, kwargs)
 
     @classmethod
     def get_pickler(cls) -> t.Callable[[t.Any], bytes]:
