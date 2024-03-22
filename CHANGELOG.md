@@ -1,5 +1,37 @@
 # Change log
 
+## `v0.7.0` - 2024-03-22
+
+### Features
+- `PickledData`: Allow passing kwargs to pickler [[f94f030]](https://github.com/sphuber/aiida-shell/commit/f94f030abb36fd8f0dee60190c71b9df5e0a8a6c)
+- `ShellJob`: Automatically serialize string for `arguments` [[4518221]](https://github.com/sphuber/aiida-shell/commit/451822157d9bc585254fded0352863258a7a7290)
+- `launch_shell_job`: Add option to keep skip resolving of `command` [[d4ad9e7]](https://github.com/sphuber/aiida-shell/commit/d4ad9e72b26b3fd6591501e29fab2c9d70046d88)
+
+### Fixes
+- Fix `InvalidOperation` raised by `aiida-core` when pickling [[0458966]](https://github.com/sphuber/aiida-shell/commit/045896653ab3f7459a6400039596400f22bb2004)
+- `prepare_computer`: Check whether `default_mpiprocs_per_machine` is set [[97f0b55]](https://github.com/sphuber/aiida-shell/commit/97f0b55404f81b8020591773075721f9efd34776)
+- `ShellJob`: Detect and prevent filename clashes [[415b27e]](https://github.com/sphuber/aiida-shell/commit/415b27e1ab69e98afba27a2179c095f8feca6c4b)
+
+### Changes
+- Set default localhost scratch to `$TMP/aiida_shell_scratch` [[beeab21]](https://github.com/sphuber/aiida-shell/commit/beeab21f87ecb89d798fa9a142e099b8689bd478)
+
+### Dependencies
+- Add support for Python 3.12 [[0ddb9c3]](https://github.com/sphuber/aiida-shell/commit/0ddb9c3178a0b76719f20d8a2ba869eb31e0147c)
+- Drop support for Python 3.8 [[ab97ef7]](https://github.com/sphuber/aiida-shell/commit/ab97ef796d365c4ecd30edd2c0556f3c701c7a8d)
+- Update minimum requirement `aiida-core~=2.5` (#69) [[d61dd00]](https://github.com/sphuber/aiida-shell/commit/d61dd00db66a3d2d82cb18a1907da2c510272ac0)
+
+### Docs
+- Add a favicon [[c439b5f]](https://github.com/sphuber/aiida-shell/commit/c439b5f592884ccb3d407d48fe8bc0f2f4a74f4c)
+- Add how-to on use of `prepend_text` metadata option (#67) [[d20edd1]](https://github.com/sphuber/aiida-shell/commit/d20edd1b56f7738daa2de1a03c06d4d7f19cef18)
+- Add section on how to run with MPI [[adf491d]](https://github.com/sphuber/aiida-shell/commit/adf491d9973d0ecb5b9d42c6bb0fc7c63e2b73ca)
+- Add section with examples [[2d9ae56]](https://github.com/sphuber/aiida-shell/commit/2d9ae56c7514e3ea290e3bafbdeb7cfb1e1c8764)
+- Fix typos `option` instead of `options` [[825aad1]](https://github.com/sphuber/aiida-shell/commit/825aad1fcf2c9f94034c2f4f1e4737c6b17c635a)
+- Link to AiiDA's docs for creating custom codes [[0cfbe4c]](https://github.com/sphuber/aiida-shell/commit/0cfbe4c72a0560f41af345ea4ebfab10079c5f69)
+
+### Devops
+- Add pre-commit hooks to format TOML and YAML files [[1cfb428]](https://github.com/sphuber/aiida-shell/commit/1cfb42890dac545785d4235a9fd187ee6fbd69bd)
+
+
 ## `v0.6.0` - 2023-11-02
 
 ### Features
