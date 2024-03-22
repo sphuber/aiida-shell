@@ -443,7 +443,7 @@ Defining a specific computer
 
 By default the shell command ran by ``launch_shell_job`` will be executed on the localhost, i.e., the computer where AiiDA is running.
 However, AiiDA also supports running commands on remote computers.
-See the `AiiDA's documentation <https://aiida.readthedocs.io/projects/aiida-core/en/latest/howto/run_codes.html#how-to-set-up-a-computer>`_ for instructions to setting up and configuring a remote computer.
+See the `AiiDA's documentation <https://aiida.readthedocs.io/projects/aiida-core/en/latest/howto/run_codes.html#how-to-set-up-a-computer>`__ for instructions to setting up and configuring a remote computer.
 To specify what computer to use for a shell command, pass it as an option to the ``metadata`` keyword:
 
 .. code-block:: python
@@ -473,7 +473,8 @@ The ``command`` argument also accepts a pre-configured code instance directly:
     code = load_code('date@localhost')
     results, node = launch_shell_job(code)
 
-This approach can be used as an alternative to the previous example where the target computer is specified through the `metadata` argument.
+This approach can be used as an alternative to the previous example where the target computer is specified through the ``metadata`` argument.
+For more details on creating codes manually, please refer to `AiiDA's documentation <https://aiida.readthedocs.io/projects/aiida-core/en/latest/howto/run_codes.html#how-to-create-a-code>`__.
 
 
 Running with MPI
