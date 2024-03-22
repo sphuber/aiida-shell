@@ -551,6 +551,8 @@ Or you can do it programmatically:
     for node in nodes:
         if node.is_finished_ok:
             print(f'{node} finished successfully')
+            # The outputs of each node can be accessed through `node.outputs`:
+            print(node.outputs.stdout.get_content())
         else:
             print(f'{node} failed')
 
