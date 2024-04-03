@@ -246,9 +246,9 @@ def test_submit_inside_workfunction(submit_and_await):
         (False, 'date'),
     ),
 )
-@pytest.mark.usefixtures('aiida_profile_clean')
-def test_resolve_command(resolve_command, executable):
+def test_resolve_command(aiida_profile, resolve_command, executable):
     """Test the ``resolve_command`` argument."""
+    aiida_profile.reset_storage()
     _, node = launch_shell_job('date', resolve_command=resolve_command)
     assert str(node.inputs.code.filepath_executable) == executable
 
@@ -296,15 +296,18 @@ def test_parser_non_stdout():
     assert results['json'] == dictionary
 
 
-@pytest.mark.usefixtures('aiida_profile_clean')
 @pytest.mark.parametrize('scheduler_type', ('core.direct', 'core.sge'))
-def test_preexisting_localhost_no_default_mpiprocs_per_machine(generate_computer, scheduler_type, caplog):
+def test_preexisting_localhost_no_default_mpiprocs_per_machine(
+    aiida_profile, generate_computer, scheduler_type, caplog
+):
     """Test that ``prepare_computer`` sets ``default_mpiprocs_per_machine`` if not set on pre-existing computer.
 
     If the ``localhost`` is created before ``prepare_computer`` is ever called, it is possible that the property
     ``default_mpiprocs_per_machine`` is not set. This would result the ``ShellJob`` validation to fail if the scheduler
     type has a job resource class that is a subclass of :class:`~aiida.schedulers.datastructures.NodeNumberJobResource`.
     """
+    aiida_profile.reset_storage()
+
     computer = generate_computer(scheduler_type=scheduler_type)
     computer.set_default_mpiprocs_per_machine(None)
     assert computer.get_default_mpiprocs_per_machine() is None

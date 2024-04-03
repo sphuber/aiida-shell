@@ -13,38 +13,24 @@ from aiida.common.datastructures import CalcInfo
 from aiida.common.folders import Folder
 from aiida.common.links import LinkType
 from aiida.engine import CalcJob
-from aiida.engine.daemon.client import DaemonClient, DaemonNotRunningException, DaemonTimeoutException
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 from aiida.orm import CalcJobNode, Computer, FolderData
 from aiida.plugins import CalculationFactory, ParserFactory
 from aiida_shell import ShellCode
 
-pytest_plugins = ['aiida.manage.tests.pytest_fixtures']
+pytest_plugins = 'aiida.tools.pytest_fixtures'
 
 
-@pytest.fixture(scope='session')
-def daemon_client(aiida_profile):
-    """Return a daemon client for the configured test profile for the test session.
+@pytest.fixture(scope='session', autouse=True)
+def aiida_profile(aiida_config, aiida_profile_factory):
+    """Create and load a profile with RabbitMQ as broker.
 
-    The daemon will be automatically stopped at the end of the test session.
+    This overrides the ``aiida_profile`` fixture provided by ``aiida-core`` which runs without broker. However, tests
+    in this package make use of the daemon which requires a broker.
     """
-    daemon_client = DaemonClient(aiida_profile)
-
-    try:
-        yield daemon_client
-    finally:
-        try:
-            daemon_client.stop_daemon(wait=True)
-        except DaemonNotRunningException:
-            pass
-        # Give an additional grace period by manually waiting for the daemon to be stopped. In certain unit test
-        # scenarios, the built in wait time in ``daemon_client.stop_daemon`` is not sufficient and even though the
-        # daemon is stopped, ``daemon_client.is_daemon_running`` will return false for a little bit longer.
-        daemon_client._await_condition(
-            lambda: not daemon_client.is_daemon_running,
-            DaemonTimeoutException('The daemon failed to stop.'),
-        )
+    with aiida_profile_factory(aiida_config, broker_backend='core.rabbitmq') as profile:
+        yield profile
 
 
 @pytest.fixture
