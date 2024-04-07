@@ -20,7 +20,7 @@ classifiers = [
   'Topic :: Scientific/Engineering'
 ]
 dependencies = [
-  'aiida-core~=2.5',
+  'aiida-core~=2.6',
   'dill'
 ]
 dynamic = ['description', 'version']

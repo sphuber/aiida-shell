@@ -16,6 +16,11 @@ class ShellCode(InstalledCode):
     calculation job as well.
     """
 
+    class Model(InstalledCode.Model):
+        """Model describing required information to create an instance."""
+
+        default_calc_job_plugin: t.Optional[str] = 'core.shell'
+
     def __init__(self, *args: t.Any, default_calc_job_plugin: str = 'core.shell', **kwargs: t.Any) -> None:
         """Construct a new instance."""
         self.validate_default_calc_job_plugin(default_calc_job_plugin)
@@ -31,10 +36,3 @@ class ShellCode(InstalledCode):
         """
         if default_calc_job_plugin != 'core.shell':
             raise ValueError(f'`default_calc_job_plugin` has to be `core.shell`, but got: {default_calc_job_plugin}')
-
-    @classmethod
-    def _get_cli_options(cls) -> dict[str, t.Any]:
-        """Return the CLI options that would allow to create an instance of this class."""
-        options = super()._get_cli_options()
-        options['default_calc_job_plugin']['default'] = 'core.shell'
-        return options
