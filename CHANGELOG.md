@@ -1,5 +1,14 @@
 # Change log
 
+## `v0.7.1` - 2024-05-13
+
+### Fixes
+- `ShellParser`: Prefix output filenames starting with a number [[352c309]](https://github.com/sphuber/aiida-shell/commit/352c309c0b4b5fd2c6af78dcf01013bfb6def6a6)
+
+### Docs
+- Docs: Add hint on retrieving outputs from daemon submitted jobs [[31ebfbc]](https://github.com/sphuber/aiida-shell/commit/31ebfbcde77f30a34a5495f349c19424d8dc1984)
+
+
 ## `v0.7.0` - 2024-03-22
 
 ### Features
