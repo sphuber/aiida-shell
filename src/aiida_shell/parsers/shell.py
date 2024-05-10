@@ -57,13 +57,17 @@ class ShellParser(Parser):
     def format_link_label(filename: str) -> str:
         """Format the link label from a given filename.
 
-        Valid link labels can only contain alphanumeric characters and underscores, without consecutive underscores. So
-        all characters that are not alphanumeric or an underscore are converted to underscores, where consecutive
-        underscores are merged into one.
+        Valid link labels can only contain alphanumeric characters and underscores, without consecutive underscores.
+        They can also not start with a number. So all characters that are not alphanumeric or an underscore are
+        converted to underscores, where consecutive underscores are merged into one. Filenames that start with a number
+        are prefixed with ``aiida_shell_``.
 
         :param filename: The filename.
         :returns: The link label.
         """
+        if re.match('^[0-9]+.*', filename):
+            filename = f'aiida_shell_{filename}'
+
         alphanumeric = re.sub('[^0-9a-zA-Z_]+', '_', filename)
         link_label = re.sub('_[_]+', '_', alphanumeric)
         return link_label
