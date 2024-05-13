@@ -120,13 +120,14 @@ def test_outputs_missing(parse_calc_job, create_retrieved_temporary):
     (
         ('filename-with-dashes.txt', 'filename_with_dashes_txt'),
         ('file@@name.txt', 'file_name_txt'),
+        ('123startingnumbers', 'aiida_shell_123startingnumbers'),
     ),
 )
 def test_outputs_link_labels(parse_calc_job, create_retrieved_temporary, filename, link_label):
     """Test that filenames are converted into valid link labels.
 
     Any characters that are non-alphanumeric or underscores should be converted to underscores where consecutive
-    underscores are merged into one.
+    underscores are merged into one. Filenames starting with a number are prefixed with ``aiida_shell_``.
     """
     files = {
         filename: 'content_a',
@@ -138,6 +139,7 @@ def test_outputs_link_labels(parse_calc_job, create_retrieved_temporary, filenam
     assert calcfunction.is_finished_ok
 
     for content in files.values():
+        assert link_label in results
         assert isinstance(results[link_label], SinglefileData)
         assert results[link_label].get_content() == content
 
