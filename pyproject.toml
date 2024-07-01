@@ -7,7 +7,7 @@ authors = [
   {name = 'Sebastiaan P. Huber', email = 'mail@sphuber.net'}
 ]
 classifiers = [
-  'Development Status :: 3 - Alpha',
+  'Development Status :: 4 - Beta',
   'Framework :: AiiDA',
   'License :: OSI Approved :: MIT License',
   'Operating System :: POSIX :: Linux',
