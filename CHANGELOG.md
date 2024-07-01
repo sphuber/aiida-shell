@@ -1,5 +1,18 @@
 # Change log
 
+## `v0.7.2` - 2024-07-01
+
+### Fixes
+- `ShellJob`: Fix `RemoteData` inputs shadowing job's own input files [[9d32bf8]](https://github.com/sphuber/aiida-shell/commit/9d32bf8b94ca30bf3657abd6cbca541151e53f56)
+
+### Dependencies
+- Update requirement `aiida-core~=2.6` [[b41d007]](https://github.com/sphuber/aiida-shell/commit/b41d007231080450be58cabb020cfcbbde00d56b)
+
+### Devops
+- Package: Change `Development Status` from `Alpha` to `Beta` [[fcfce35]](https://github.com/sphuber/aiida-shell/commit/fcfce35d80bba3ae3070125dea52f1ac1e0b8cfa)
+- Make use of the improved `pytest` fixtures in `aiida-core` [[27a6393]](https://github.com/sphuber/aiida-shell/commit/27a63932eeca3ca80356dc0a9a0f9ef9b7b78295)
+
+
 ## `v0.7.1` - 2024-05-13
 
 ### Fixes

@@ -10,5 +10,5 @@ authors:
     email: mail@sphuber.net
     affiliation: École Polytechnique Fédérale de Lausanne
 repository-code: "https://github.com/sphuber/aiida-shell"
-version: 0.7.1
+version: 0.7.2
 license: MIT License
