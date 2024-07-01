@@ -20,7 +20,7 @@ classifiers = [
   'Topic :: Scientific/Engineering'
 ]
 dependencies = [
-  'aiida-core@git+https://github.com/sphuber/aiida-core@fix/pytest-fixtures-pgtest-optional',
+  'aiida-core~=2.6,>=2.6.1',
   'dill'
 ]
 dynamic = ['description', 'version']
