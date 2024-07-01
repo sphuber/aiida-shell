@@ -20,7 +20,7 @@ classifiers = [
   'Topic :: Scientific/Engineering'
 ]
 dependencies = [
-  'aiida-core~=2.6',
+  'aiida-core~=2.6,>=2.6.1',
   'dill'
 ]
 dynamic = ['description', 'version']
@@ -45,7 +45,6 @@ requires-python = '>=3.9'
 dev = [
   'mypy==1.6.1',
   'pre-commit',
-  'pgtest~=1.3,>=1.3.1',
   'pytest~=6.2',
   'pytest-regressions'
 ]

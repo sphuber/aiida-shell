@@ -49,9 +49,6 @@ jobs:
         cache: pip
         cache-dependency-path: pyproject.toml
 
-    - name: Install system dependencies
-      run: sudo apt update && sudo apt install postgresql
-
     - name: Install Python package and dependencies
       run: pip install -e .[dev]
 
