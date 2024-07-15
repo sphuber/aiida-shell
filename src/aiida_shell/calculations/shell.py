@@ -277,10 +277,14 @@ class ShellJob(CalcJob):
         arguments = (inputs.get('arguments', None) or List()).get_list()
         outputs = (inputs.get('outputs', None) or List()).get_list()
         filename_stdin = inputs['metadata']['options'].get('filename_stdin', None)
-        retrieve_list = (
-            outputs + list(self.DEFAULT_RETRIEVED_TEMPORARY) + (self.node.get_option('additional_retrieve') or [])
-        )
+        filename_stdout = inputs['metadata']['options'].get('output_filename', None)
+        default_retrieved_temporary = list(self.DEFAULT_RETRIEVED_TEMPORARY)
 
+        if filename_stdout:
+            default_retrieved_temporary.remove(self.FILENAME_STDOUT)
+            default_retrieved_temporary.append(filename_stdout)
+
+        retrieve_list = outputs + default_retrieved_temporary + (self.node.get_option('additional_retrieve') or [])
         processed_arguments = self.process_arguments_and_nodes(dirpath, nodes, filenames, arguments)
 
         # If an explicit filename for the stdin file descriptor is specified it should not be part of the command line

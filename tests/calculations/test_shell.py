@@ -222,6 +222,18 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
     assert code_info.cmdline_params == ['custom_filename']
 
 
+def test_output_filename(generate_calc_job, generate_code, file_regression):
+    """Test the ``metadata.options.output_filename`` input."""
+    output_filename = 'custom_stdout'
+    inputs = {
+        'code': generate_code('echo'),
+        'arguments': 'test',
+        'metadata': {'options': {'output_filename': output_filename}},
+    }
+    tmp_path, calc_info = generate_calc_job('core.shell', inputs, presubmit=True)
+    assert output_filename in calc_info.retrieve_temporary_list
+
+
 def test_filename_stdin(generate_calc_job, generate_code, file_regression):
     """Test the ``metadata.options.filename_stdin`` input."""
     inputs = {
