@@ -1,5 +1,12 @@
 # Change log
 
+## `v0.7.3` - 2024-07-16
+
+### Fixes
+
+- `ShellJob`: Fix bug when `metadata.options.output_filename` is specified [[437f2b3]](https://github.com/sphuber/aiida-shell/commit/437f2b3c656fec275ff8a5a4f710b469f6c3264c)
+
+
 ## `v0.7.2` - 2024-07-01
 
 ### Fixes
