@@ -10,8 +10,12 @@ from aiida_shell.calculations.shell import ShellJob
 from aiida_shell.data import EntryPointData, PickledData
 
 
-def custom_parser(self, dirpath):
+def custom_parser(dirpath):
     """Implement a custom parser to test the ``parser`` input for a ``ShellJob``."""
+
+
+def custom_parser_with_parser_argument(dirpath, parser):
+    """Implement a custom parser that defines the optional ``parser`` argument."""
 
 
 def test_code(generate_calc_job, generate_code):
@@ -347,6 +351,16 @@ def test_parser(generate_calc_job, generate_code):
     assert isinstance(process.inputs.parser, PickledData)
 
 
+def test_parser_with_parser_argument(generate_calc_job, generate_code):
+    """Test the ``parser`` input for valid input."""
+    process = generate_calc_job(
+        'core.shell',
+        inputs={'code': generate_code(), 'parser': custom_parser_with_parser_argument},
+        return_process=True,
+    )
+    assert isinstance(process.inputs.parser, PickledData)
+
+
 def test_parser_entry_point(generate_calc_job, generate_code, entry_points):
     """Test the ``parser`` serialization and validation when input is an entry point."""
     entry_point_name = 'aiida.parsers:shell.parser'
@@ -374,7 +388,7 @@ def test_parser_over_daemon(generate_code, submit_and_await):
     """Test submitting a ``ShellJob`` with a custom parser over the daemon."""
     value = 'testing'
 
-    def parser(self, dirpath):
+    def parser(dirpath):
         from aiida.orm import Str
 
         return {'string': Str((dirpath / 'stdout').read_text().strip())}

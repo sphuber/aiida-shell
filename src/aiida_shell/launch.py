@@ -10,9 +10,10 @@ import typing as t
 from aiida.common import exceptions, lang
 from aiida.engine import Process, WorkChain, launch
 from aiida.orm import AbstractCode, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
-from aiida.parsers import Parser
 
 from aiida_shell import ShellCode, ShellJob
+
+from .calculations.shell import ParserFunctionType
 
 __all__ = ('launch_shell_job',)
 
@@ -25,7 +26,7 @@ def launch_shell_job(  # noqa: PLR0913
     nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
     filenames: dict[str, str] | None = None,
     outputs: list[str] | None = None,
-    parser: t.Callable[[Parser, pathlib.Path], dict[str, Data]] | str | None = None,
+    parser: ParserFunctionType | str | None = None,
     metadata: dict[str, t.Any] | None = None,
     submit: bool = False,
     resolve_command: bool = True,
