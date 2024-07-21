@@ -256,7 +256,7 @@ def test_resolve_command(aiida_profile, resolve_command, executable):
 def test_parser():
     """Test the ``parser`` argument."""
 
-    def parser(self, dirpath):
+    def parser(dirpath):
         from aiida.orm import Str
 
         return {'string': Str((dirpath / 'stdout').read_text().strip())}
@@ -276,7 +276,7 @@ def test_parser_non_stdout():
     """
     filename = 'results.json'
 
-    def parser(self, dirpath):
+    def parser(dirpath):
         import json
 
         from aiida.orm import Dict
@@ -294,6 +294,22 @@ def test_parser_non_stdout():
 
     assert node.is_finished_ok
     assert results['json'] == dictionary
+
+
+def test_parser_with_parser_argument():
+    """Test the ``parser`` argument for callable that specifies optional ``parser`` argument."""
+
+    def parser(dirpath, parser):
+        from aiida.orm import Str
+
+        return {'arguments': Str(parser.node.inputs.arguments[0])}
+
+    value = 'test_string'
+    arguments = [value]
+    results, node = launch_shell_job('echo', arguments=arguments, parser=parser)
+
+    assert node.is_finished_ok
+    assert results['arguments'] == value
 
 
 @pytest.mark.parametrize('scheduler_type', ('core.direct', 'core.sge'))

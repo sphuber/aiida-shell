@@ -138,8 +138,15 @@ class ShellParser(Parser):
 
     def call_parser_hook(self, dirpath: pathlib.Path) -> None:
         """Execute the ``parser`` custom parser hook that was passed as input to the ``ShellJob``."""
+        from inspect import signature
+
         unpickled_parser = self.node.inputs.parser.load()
-        results = unpickled_parser(self, dirpath) or {}
+        parser_signature = signature(unpickled_parser)
+
+        if 'parser' in parser_signature.parameters:
+            results = unpickled_parser(dirpath, self) or {}
+        else:
+            results = unpickled_parser(dirpath) or {}
 
         if not isinstance(results, dict) or any(not isinstance(value, Data) for value in results.values()):
             raise TypeError(f'{unpickled_parser} did not return a dictionary of `Data` nodes but: {results}')

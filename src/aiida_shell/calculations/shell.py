@@ -11,10 +11,15 @@ from aiida.common.datastructures import CalcInfo, CodeInfo, FileCopyOperation
 from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
 from aiida.orm import Data, Dict, FolderData, List, RemoteData, SinglefileData, to_aiida_type
+from aiida.parsers import Parser
 
 from aiida_shell.data import EntryPointData, PickledData
 
 __all__ = ('ShellJob',)
+
+ParserFunctionType = t.Union[
+    t.Callable[[pathlib.Path, Parser], dict[str, Data]], t.Callable[[pathlib.Path], dict[str, Data]]
+]
 
 
 class ShellJob(CalcJob):
@@ -191,8 +196,11 @@ class ShellJob(CalcJob):
 
         parameters = list(signature.parameters.keys())
 
-        if any(required_parameter not in parameters for required_parameter in ('self', 'dirpath')):
-            correct_signature = '(self, dirpath: pathlib.Path) -> dict[str, Data]:'
+        if sorted(parameters) not in (['dirpath'], ['dirpath', 'parser']):
+            correct_signature = (
+                '(dirpath: pathlib.Path) -> dict[str, Data]: or '
+                '(dirpath: pathlib.Path, parser: Parser) -> dict[str, Data]:'
+            )
             return f'The `parser` has an invalid function signature, it should be: {correct_signature}'
 
         return None
