@@ -6,8 +6,10 @@ import pathlib
 import shlex
 import tempfile
 import typing as t
+import warnings
 
 from aiida.common import exceptions, lang
+from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.engine import Process, WorkChain, launch
 from aiida.orm import AbstractCode, Computer, Data, ProcessNode, SinglefileData, load_code, load_computer
 
@@ -58,7 +60,18 @@ def launch_shell_job(  # noqa: PLR0913
         generated for each ``CalcJob`` and typically are not of interest to a user running ``launch_shell_job``. In
         order to not confuse them, these nodes are omitted, but they can always be accessed through the node.
     """
-    computer = (metadata or {}).get('options', {}).pop('computer', None)
+    metadata = metadata or {}
+    computer = metadata.get('options', {}).pop('computer', None)
+
+    if computer:
+        warnings.warn(
+            'Specifying a computer through `metadata.options.computer` in `launch_shell_job` is deprecated. Please use '
+            '`metadata.computer` instead.',
+            AiidaDeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        computer = metadata.pop('computer', None)
 
     if isinstance(command, str):
         code = prepare_code(command, computer, resolve_command)

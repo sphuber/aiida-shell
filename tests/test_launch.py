@@ -337,3 +337,14 @@ def test_preexisting_localhost_no_default_mpiprocs_per_machine(
         assert computer.get_default_mpiprocs_per_machine() is None
 
     Computer.collection.delete(computer.pk)
+
+
+def test_metadata_computer(generate_computer):
+    """Test the ``metadata.computer`` input."""
+    label = 'custom-computer'
+    computer = generate_computer(label=label)
+    assert computer.label == label
+
+    _, node = launch_shell_job('date', metadata={'computer': computer})
+    assert node.is_finished_ok
+    assert node.inputs.code.computer.uuid == computer.uuid
