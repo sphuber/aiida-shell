@@ -47,6 +47,15 @@ def test_error_command_failed():
     assert node.exit_status == ShellJob.exit_codes.ERROR_COMMAND_FAILED.status
 
 
+def test_multi_command_raise():
+    """Test that the shellfunction process fails if the command consists of more than one argument.
+
+    Running ``git diff`` raises an error message.
+    """
+    with pytest.raises(ValueError, match=r'.* Command should only consist of one argument containing .*'):
+        launch_shell_job('git diff')
+
+
 def test_default():
     """Test :func:`aiida_shell.launch_shell_job` with default arguments."""
     results, node = launch_shell_job('date')

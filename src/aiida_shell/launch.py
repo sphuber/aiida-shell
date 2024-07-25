@@ -118,6 +118,14 @@ def prepare_code(command: str, computer: Computer | None = None, resolve_command
     :return: A :class:`aiida.orm.nodes.code.abstract.AbstractCode` instance.
     :raises ValueError: If ``resolve_command=True`` and the code fails to determine the absolute path of the command.
     """
+    splitted_command = command.strip().split(' ')
+    if len(splitted_command) > 1:
+        raise ValueError(
+            f'Command should only consist of one argument containing the executable '
+            f'but found {len(splitted_command)} arguments {splitted_command}. '
+            'Please add any further arguments to the `arguments` parameter in `launch_shell_job`.'
+        )
+
     computer = prepare_computer(computer)
     code_label = f'{command}@{computer.label}'
 
@@ -130,7 +138,6 @@ def prepare_code(command: str, computer: Computer | None = None, resolve_command
             with computer.get_transport() as transport:
                 status, stdout, stderr = transport.exec_command_wait(f'which {command}')
                 executable = stdout.strip()
-
                 if status != 0:
                     raise ValueError(
                         f'failed to determine the absolute path of the command on the computer: {stderr}'
