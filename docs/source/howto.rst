@@ -37,6 +37,24 @@ To pass arguments to the shell command, pass them as a string to the ``arguments
 
 which should print something like ``2022-03-17``.
 
+.. tip::
+
+    Curly braces ``{}`` carry specific meaning in ``arguments`` and are considered as placeholders for input files (see :ref:`this section <how-to:running-a-shell-command-with-files-as-arguments>`).
+    If you need literal curly braces, escape them by doubling them, `just as you would for a normal f-string <https://docs.python.org/3/library/string.html#format-string-syntax>`_:
+
+    .. code::
+
+        from aiida_shell import launch_shell_job
+        results, node = launch_shell_job(
+            'echo',
+            arguments='some{{curly}}braces',
+        )
+        print(results['stdout'].get_content())
+
+    which prints ``some{curly}braces``.
+
+
+.. _how-to:running-a-shell-command-with-files-as-arguments:
 
 Running a shell command with files as arguments
 ===============================================
