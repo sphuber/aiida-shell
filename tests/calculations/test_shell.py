@@ -226,6 +226,18 @@ def test_arguments_files_filenames(generate_calc_job, generate_code):
     assert code_info.cmdline_params == ['custom_filename']
 
 
+def test_arguments_escaped_braces(generate_calc_job, generate_code):
+    """Test the ``arguments`` with arguments containing escaped curly braces."""
+    arguments = List(['some{{escaped}}braces'])
+    inputs = {
+        'code': generate_code(),
+        'arguments': arguments,
+    }
+    _, calc_info = generate_calc_job('core.shell', inputs)
+    code_info = calc_info.codes_info[0]
+    assert code_info.cmdline_params == ['some{escaped}braces']
+
+
 def test_output_filename(generate_calc_job, generate_code, file_regression):
     """Test the ``metadata.options.output_filename`` input."""
     output_filename = 'custom_stdout'

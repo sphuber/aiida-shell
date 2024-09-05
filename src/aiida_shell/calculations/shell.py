@@ -382,7 +382,7 @@ class ShellJob(CalcJob):
 
             # If the argument contains no placeholders simply append the argument and continue.
             if not field_names:
-                processed_arguments.append(argument)
+                processed_arguments.append(argument.format())
                 continue
 
             # Otherwise we validate that there is exactly one placeholder and that a ``SinglefileData`` input node is
