@@ -47,6 +47,15 @@ def test_error_command_failed():
     assert node.exit_status == ShellJob.exit_codes.ERROR_COMMAND_FAILED.status
 
 
+def test_multi_command_raise():
+    """Test :func:`aiida_shell.launch_shell_job` raises if ``command`` is passed with arguments.
+
+    Tests if the command is correctly resolved and raises an error message.
+    """
+    with pytest.raises(ValueError, match=r'failed to determine the absolute path of the command on the computer.*'):
+        launch_shell_job('git diff')
+
+
 def test_default():
     """Test :func:`aiida_shell.launch_shell_job` with default arguments."""
     results, node = launch_shell_job('date')
