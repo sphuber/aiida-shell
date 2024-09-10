@@ -128,7 +128,7 @@ def prepare_code(command: str, computer: Computer | None = None, resolve_command
 
         if resolve_command:
             with computer.get_transport() as transport:
-                status, stdout, stderr = transport.exec_command_wait(f'which {command}')
+                status, stdout, stderr = transport.exec_command_wait(f'which "{command}"')
                 executable = stdout.strip()
 
                 if status != 0:
