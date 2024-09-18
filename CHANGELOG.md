@@ -3,15 +3,15 @@
 ## `v0.8.0` - 2024-09-18
 
 ### Breaking changes
-- `launch_shell_job`: Move `computer` to top-level of `metadata` [[2ab8219]](https://github.com//commit/2ab82195b755cfc6d814439a72670632d2e025ff)
-- `ShellJob`: Change the signature of custom parser functions [[8a561b6]](https://github.com//commit/8a561b6a7c74eb35ff3a7bc7f062a72e41c4f707)
+- `launch_shell_job`: Move `computer` to top-level of `metadata` [[2ab8219]](https://github.com/sphuber/aiida-shell/commit/2ab82195b755cfc6d814439a72670632d2e025ff)
+- `ShellJob`: Change the signature of custom parser functions [[8a561b6]](https://github.com/sphuber/aiida-shell/commit/8a561b6a7c74eb35ff3a7bc7f062a72e41c4f707)
 
 ### Refactor
-- Refactor: abstract `prepare_shell_job_inputs` from `launch_shell_job` [[cc72abd]](https://github.com//commit/cc72abd4e835c2f60d6a33750cfb50d29e71a232)
+- Refactor: abstract `prepare_shell_job_inputs` from `launch_shell_job` [[cc72abd]](https://github.com/sphuber/aiida-shell/commit/cc72abd4e835c2f60d6a33750cfb50d29e71a232)
 
 ### Fixes
-- `prepare_code`: Quote command when passing to `which` in order to resolve [[104d03b]](https://github.com//commit/104d03b3b9b43b3b3eec77e6e10bd6ec7ffa5ec0)
-- `ShellCalculation`: Resolve escaped curly braces in arguments [[521a7ec]](https://github.com//commit/521a7ec491ea15d4f1a1af5cbf7621e37bb9ad7c)
+- `prepare_code`: Quote command when passing to `which` in order to resolve [[104d03b]](https://github.com/sphuber/aiida-shell/commit/104d03b3b9b43b3b3eec77e6e10bd6ec7ffa5ec0)
+- `ShellCalculation`: Resolve escaped curly braces in arguments [[521a7ec]](https://github.com/sphuber/aiida-shell/commit/521a7ec491ea15d4f1a1af5cbf7621e37bb9ad7c)
 
 
 ## `v0.7.3` - 2024-07-16
