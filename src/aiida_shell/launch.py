@@ -22,7 +22,67 @@ __all__ = ('launch_shell_job',)
 LOGGER = logging.getLogger('aiida_shell')
 
 
-def prepare_shell_job_inputs(
+def launch_shell_job(  # noqa: PLR0913
+    command: str | AbstractCode,
+    arguments: list[str] | str | None = None,
+    nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
+    filenames: dict[str, str] | None = None,
+    outputs: list[str] | None = None,
+    parser: ParserFunctionType | str | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    submit: bool = False,
+    resolve_command: bool = True,
+) -> tuple[dict[str, Data], ProcessNode]:
+    """Launch a :class:`aiida_shell.ShellJob` job for the given command.
+
+    :param command: The shell command to run. Should be the relative command name, e.g., ``date``. An ``AbstractCode``
+        instance will be automatically created for this command if it doesn't already exist. Alternatively, a pre-
+        configured ``AbstractCode`` instance can be passed directly.
+    :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes. The
+        arguments can also be specified as a single string. In this case, it will be split into separate parameters
+        using ``shlex.split``.
+    :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
+    :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
+    :param outputs: Optional list of relative filenames that should be captured as outputs.
+    :param parser: Optional callable that can implement custom parsing logic of produced output files. Alternatively,
+        a complete entry point, i.e. a string of the form ``{entry_point_group}:{entry_point_name}`` pointing to such a
+        callable.
+    :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
+    :param submit: Boolean, if ``True`` will submit the job to the daemon instead of running in current interpreter.
+    :param resolve_command: Whether to resolve the command to the absolute path of the executable. If set to ``True``,
+        the ``which`` command is executed on the target computer to attempt and determine the absolute path. Otherwise,
+        the command is set as the ``filepath_executable`` attribute of the created ``AbstractCode`` instance.
+    :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
+    :raises ValueError: If ``resolve_command=True`` and the absolute path of the command on the computer could not be
+        determined.
+    :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``. The
+        results dictionary intentionally doesn't include the ``retrieved`` and ``remote_folder`` outputs as they are
+        generated for each ``CalcJob`` and typically are not of interest to a user running ``launch_shell_job``. In
+        order to not confuse them, these nodes are omitted, but they can always be accessed through the node.
+    """
+    inputs = prepare_shell_job_inputs(
+        command=command,
+        arguments=arguments,
+        nodes=nodes,
+        filenames=filenames,
+        outputs=outputs,
+        parser=parser,
+        metadata=metadata,
+        resolve_command=resolve_command,
+    )
+
+    if submit:
+        current_process = Process.current()
+        if current_process is not None and isinstance(current_process, WorkChain):
+            return {}, current_process.submit(ShellJob, inputs)
+        return {}, launch.submit(ShellJob, inputs)
+
+    results, node = launch.run_get_node(ShellJob, inputs)
+
+    return {label: node for label, node in results.items() if label not in ('retrieved', 'remote_folder')}, node
+
+
+def prepare_shell_job_inputs(  # noqa: PLR0913
     command: str | AbstractCode,
     arguments: list[str] | str | None = None,
     nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
@@ -90,67 +150,6 @@ def prepare_shell_job_inputs(
     }
 
     return inputs
-
-
-def launch_shell_job(  # noqa: PLR0913
-    command: str | AbstractCode,
-    arguments: list[str] | str | None = None,
-    nodes: t.Mapping[str, str | pathlib.Path | Data] | None = None,
-    filenames: dict[str, str] | None = None,
-    outputs: list[str] | None = None,
-    parser: ParserFunctionType | str | None = None,
-    metadata: dict[str, t.Any] | None = None,
-    submit: bool = False,
-    resolve_command: bool = True,
-) -> tuple[dict[str, Data], ProcessNode]:
-    """Launch a :class:`aiida_shell.ShellJob` job for the given command.
-
-    :param command: The shell command to run. Should be the relative command name, e.g., ``date``. An ``AbstractCode``
-        instance will be automatically created for this command if it doesn't already exist. Alternatively, a pre-
-        configured ``AbstractCode`` instance can be passed directly.
-    :param arguments: Optional list of command line arguments optionally containing placeholders for input nodes. The
-        arguments can also be specified as a single string. In this case, it will be split into separate parameters
-        using ``shlex.split``.
-    :param nodes: A dictionary of ``Data`` nodes whose content is to replace placeholders in the ``arguments`` list.
-    :param filenames: Optional dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
-    :param outputs: Optional list of relative filenames that should be captured as outputs.
-    :param parser: Optional callable that can implement custom parsing logic of produced output files. Alternatively,
-        a complete entry point, i.e. a string of the form ``{entry_point_group}:{entry_point_name}`` pointing to such a
-        callable.
-    :param metadata: Optional dictionary of metadata inputs to be passed to the ``ShellJob``.
-    :param submit: Boolean, if ``True`` will submit the job to the daemon instead of running in current interpreter.
-    :param resolve_command: Whether to resolve the command to the absolute path of the executable. If set to ``True``,
-        the ``which`` command is executed on the target computer to attempt and determine the absolute path. Otherwise,
-        the command is set as the ``filepath_executable`` attribute of the created ``AbstractCode`` instance.
-    :raises TypeError: If the value specified for ``metadata.options.computer`` is not a ``Computer``.
-    :raises ValueError: If ``resolve_command=True`` and the absolute path of the command on the computer could not be
-        determined.
-    :returns: The tuple of results dictionary and ``ProcessNode``, or just the ``ProcessNode`` if ``submit=True``. The
-        results dictionary intentionally doesn't include the ``retrieved`` and ``remote_folder`` outputs as they are
-        generated for each ``CalcJob`` and typically are not of interest to a user running ``launch_shell_job``. In
-        order to not confuse them, these nodes are omitted, but they can always be accessed through the node.
-    """
-
-    inputs = prepare_shell_job_inputs(
-        command=command,
-        arguments=arguments,
-        nodes=nodes,
-        filenames=filenames,
-        outputs=outputs,
-        parser=parser,
-        metadata=metadata,
-        resolve_command=resolve_command,
-    )
-    
-    if submit:
-        current_process = Process.current()
-        if current_process is not None and isinstance(current_process, WorkChain):
-            return {}, current_process.submit(ShellJob, inputs)
-        return {}, launch.submit(ShellJob, inputs)
-
-    results, node = launch.run_get_node(ShellJob, inputs)
-
-    return {label: node for label, node in results.items() if label not in ('retrieved', 'remote_folder')}, node
 
 
 def prepare_code(command: str, computer: Computer | None = None, resolve_command: bool = True) -> AbstractCode:
