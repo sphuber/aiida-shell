@@ -131,7 +131,6 @@ def launch_shell_job(  # noqa: PLR0913
         order to not confuse them, these nodes are omitted, but they can always be accessed through the node.
     """
 
-    # Prepare inputs for the ShellJob
     inputs = prepare_shell_job_inputs(
         command=command,
         arguments=arguments,
