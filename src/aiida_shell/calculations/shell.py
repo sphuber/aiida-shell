@@ -407,7 +407,7 @@ class ShellJob(CalcJob):
                 self.write_folder_data(node, dirpath, filename)
                 argument_interpolated = argument.format(**{placeholder: filename or placeholder})
             elif isinstance(node, RemoteData):
-                self.handle_remote_data(node)
+                argument_interpolated = argument.format(**{placeholder: node.get_remote_path()})
             else:
                 argument_interpolated = argument.format(**{placeholder: str(node.value)})
 

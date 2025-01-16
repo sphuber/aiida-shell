@@ -140,12 +140,13 @@ def test_nodes_remote_data(tmp_path, aiida_localhost, use_symlinks):
     (dirpath_sub_filled / 'file_b.txt').write_text('content b')
 
     # Create a ``RemoteData`` node of the ``archive`` directory which should contain only the ``archive.zip`` file.
+    remote_zip = RemoteData(remote_path=str(dirpath_archive / 'archive'), computer=aiida_localhost)
     remote_data = RemoteData(remote_path=str(dirpath_archive), computer=aiida_localhost)
 
     results, node = launch_shell_job(
         'unzip',
-        arguments=['archive.zip'],
-        nodes={'remote': remote_data},
+        arguments=['{remote_zip}'],
+        nodes={'remote_zip': remote_zip, 'remote': remote_data},
         outputs=['file_a.txt'],
         metadata={
             'options': {'use_symlinks': use_symlinks},
