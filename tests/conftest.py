@@ -58,7 +58,7 @@ def parse_calc_job(generate_calc_job_node, generate_parser):
 
 
 @pytest.fixture
-def generate_calc_job(tmp_path):
+def generate_calc_job(tmp_path_factory):
     """Create a :class:`aiida.engine.CalcJob` instance with the given inputs.
 
     The fixture will call ``prepare_for_submission`` and return a tuple of the temporary folder that was passed to it,
@@ -81,6 +81,7 @@ def generate_calc_job(tmp_path):
             which ensures that all input files are written, including those by the scheduler plugin, such as the
             submission script.
         """
+        tmp_path = tmp_path_factory.mktemp('calc_job_submit_dir')
         manager = get_manager()
         runner = manager.get_runner()
 

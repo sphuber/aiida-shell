@@ -88,7 +88,7 @@ def test_nodes_folder_data(generate_calc_job, generate_code, tmp_path):
 
 @pytest.mark.parametrize('use_symlinks', (True, False))
 def test_nodes_remote_data(generate_calc_job, generate_code, tmp_path, aiida_localhost, use_symlinks):
-    """Test the ``nodes`` input with ``RemoteData`` nodes ."""
+    """Test the ``nodes`` input with ``RemoteData`` nodes."""
     inputs = {
         'code': generate_code(),
         'arguments': [],
@@ -105,6 +105,39 @@ def test_nodes_remote_data(generate_calc_job, generate_code, tmp_path, aiida_loc
     else:
         assert calc_info.remote_symlink_list == []
         assert sorted(calc_info.remote_copy_list) == [(aiida_localhost.uuid, str(tmp_path / '*'), '.')]
+
+
+def test_nodes_remote_data_filename(generate_calc_job, generate_code, tmp_path, aiida_localhost):
+    """Test the ``nodes`` and ``filenames`` inputs with ``RemoteData`` nodes."""
+    remote_path_a = tmp_path / 'remote_a'
+    remote_path_b = tmp_path / 'remote_b'
+    remote_path_a.mkdir()
+    remote_path_b.mkdir()
+    (remote_path_a / 'file_a.txt').write_text('content a')
+    (remote_path_b / 'file_b.txt').write_text('content b')
+    remote_data_a = RemoteData(remote_path=str(remote_path_a.absolute()), computer=aiida_localhost)
+    remote_data_b = RemoteData(remote_path=str(remote_path_b.absolute()), computer=aiida_localhost)
+
+    inputs = {
+        'code': generate_code(),
+        'arguments': ['{remote_a}'],
+        'nodes': {
+            'remote_a': remote_data_a,
+            'remote_b': remote_data_b,
+        },
+        'filenames': {'remote_a': 'target_remote'},
+    }
+    dirpath, calc_info = generate_calc_job('core.shell', inputs)
+
+    code_info = calc_info.codes_info[0]
+    assert code_info.cmdline_params == ['target_remote']
+
+    assert calc_info.remote_symlink_list == []
+    assert sorted(calc_info.remote_copy_list) == [
+        (aiida_localhost.uuid, str(remote_path_a), 'target_remote'),
+        (aiida_localhost.uuid, str(remote_path_b / '*'), '.'),
+    ]
+    assert sorted(p.name for p in dirpath.iterdir()) == []
 
 
 def test_nodes_base_types(generate_calc_job, generate_code):
