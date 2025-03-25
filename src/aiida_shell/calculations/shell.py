@@ -1,6 +1,3 @@
-# NOTE: The appending of `/*` is done to copy all the contents of the RemoteData directory to the CWD
-# NOTE: The exception handling in `listdir` can also be improved
-# NOTE: Use `stat` of transport rather than try-except
 """Implementation of :class:`aiida.engine.CalcJob` to make it easy to run an arbitrary shell command on a computer."""
 from __future__ import annotations
 
