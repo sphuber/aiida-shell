@@ -1,3 +1,6 @@
+# NOTE: The appending of `/*` is done to copy all the contents of the RemoteData directory to the CWD
+# NOTE: The exception handling in `listdir` can also be improved
+# NOTE: Use `stat` of transport rather than try-except
 """Implementation of :class:`aiida.engine.CalcJob` to make it easy to run an arbitrary shell command on a computer."""
 from __future__ import annotations
 
@@ -346,10 +349,32 @@ class ShellJob(CalcJob):
         instructions = []
 
         for key, node in remote_data_nodes.items():
+            remote_path = node.get_remote_path()
+
+            # This implemenation will be available in aiida-core this PR is merged
+            # https://github.com/aiidateam/aiida-core/pull/6807
+            # Then, the check will be via `node.is_file`
+            authinfo = node.get_authinfo()
+            transport = authinfo.get_transport()
+
+            with transport:
+                remote_is_file = transport.isfile(remote_path)
+
+            # Resolve filename
             if key in filenames:
-                instructions.append((computer.uuid, node.get_remote_path(), filenames[key]))
+                filename = filenames[key]
+            elif remote_is_file:
+                filename = pathlib.Path(remote_path).name
             else:
-                instructions.append((computer.uuid, f'{node.get_remote_path()}/*', '.'))
+                filename = '.'
+
+            # Resolve source_path
+            if remote_is_file:
+                source_path = remote_path
+            else:
+                source_path = f"{remote_path}/*"
+
+            instructions.append((computer.uuid, source_path, filename))
 
         if use_symlinks:
             return [], instructions
@@ -480,7 +505,21 @@ class ShellJob(CalcJob):
                             f'node `{key}` contains the file `{f}` which overlaps with a reserved output filename.'
                         )
             elif isinstance(node, RemoteData):
+                remote_path = node.get_remote_path()
                 filename = filenames.get(key, None)
+
+                # This implemenation will be available in aiida-core this PR is merged
+                # https://github.com/aiidateam/aiida-core/pull/6807
+                # Then, the check will be via `node.is_file`
+                authinfo = self.get_authinfo()
+                transport = authinfo.get_transport()
+
+                with transport:
+                    remote_is_file = transport.isfile(remote_path)
+
+                if not filename and remote_is_file:
+                    filename = pathlib.Path(remote_path).name
+                    filenames[key] = filename
             else:
                 continue
 
