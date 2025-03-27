@@ -508,7 +508,7 @@ class ShellJob(CalcJob):
                 # This implemenation will be available in aiida-core this PR is merged
                 # https://github.com/aiidateam/aiida-core/pull/6807
                 # Then, the check will be via `node.is_file`
-                authinfo = self.get_authinfo()
+                authinfo = node.get_authinfo()
                 transport = authinfo.get_transport()
 
                 with transport:
