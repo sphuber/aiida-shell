@@ -385,7 +385,6 @@ class ShellJob(CalcJob):
 
         return instructions, []
 
-
     def process_arguments_and_nodes(
         self, dirpath: pathlib.Path, nodes: dict[str, SinglefileData], filenames: dict[str, str], arguments: list[str]
     ) -> list[str]:
