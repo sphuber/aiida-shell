@@ -115,8 +115,18 @@ def test_nodes_remote_data_filename(generate_calc_job, generate_code, tmp_path, 
     remote_path_b.mkdir()
     (remote_path_a / 'file_a.txt').write_text('content a')
     (remote_path_b / 'file_b.txt').write_text('content b')
+
+    remote_path_c = tmp_path / 'remote_c' / 'file_c.txt'
+    remote_path_d = tmp_path / 'remote_d' / 'file_d.txt'
+    remote_path_c.parent.mkdir()
+    remote_path_d.parent.mkdir()
+    remote_path_c.write_text('content c')
+    remote_path_d.write_text('content d')
+
     remote_data_a = RemoteData(remote_path=str(remote_path_a.absolute()), computer=aiida_localhost)
     remote_data_b = RemoteData(remote_path=str(remote_path_b.absolute()), computer=aiida_localhost)
+    remote_data_c = RemoteData(remote_path=str(remote_path_c.absolute()), computer=aiida_localhost)
+    remote_data_d = RemoteData(remote_path=str(remote_path_d.absolute()), computer=aiida_localhost)
 
     inputs = {
         'code': generate_code(),
@@ -124,8 +134,13 @@ def test_nodes_remote_data_filename(generate_calc_job, generate_code, tmp_path, 
         'nodes': {
             'remote_a': remote_data_a,
             'remote_b': remote_data_b,
+            'remote_c': remote_data_c,
+            'remote_d': remote_data_d,
         },
-        'filenames': {'remote_a': 'target_remote'},
+        'filenames': {
+            'remote_a': 'target_remote',
+            'remote_c': 'target_remote_file',
+        },
     }
     dirpath, calc_info = generate_calc_job('core.shell', inputs)
 
@@ -134,8 +149,10 @@ def test_nodes_remote_data_filename(generate_calc_job, generate_code, tmp_path, 
 
     assert calc_info.remote_symlink_list == []
     assert sorted(calc_info.remote_copy_list) == [
-        (aiida_localhost.uuid, str(remote_path_a), 'target_remote'),
+        (aiida_localhost.uuid, str(remote_path_a / '*'), 'target_remote'),
         (aiida_localhost.uuid, str(remote_path_b / '*'), '.'),
+        (aiida_localhost.uuid, str(remote_path_c), 'target_remote_file'),
+        (aiida_localhost.uuid, str(remote_path_d), 'file_d.txt'),
     ]
     assert sorted(p.name for p in dirpath.iterdir()) == []
 
