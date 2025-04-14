@@ -348,18 +348,25 @@ class ShellJob(CalcJob):
         for key, node in remote_data_nodes.items():
             remote_path = node.get_remote_path()
 
-            # This implemenation will be available in aiida-core this PR is merged
-            # https://github.com/aiidateam/aiida-core/pull/6807
-            # Then, the check will be via `node.is_file`
             authinfo = node.get_authinfo()
             transport = authinfo.get_transport()
 
             with transport:
+                if not transport.path_exists(path=remote_path):
+                    msg = f"Remote path `{remote_path}` for node with key `{key}` does not exist"
+                    raise ValueError(msg)
+
                 remote_is_file = transport.isfile(remote_path)
 
             # Resolve filename
             if key in filenames:
                 filename = filenames[key]
+                # For directory paths with explicit filenames, preserve original behavior
+                # (copy the entire directory, not just its contents)
+                if not remote_is_file:
+                    source_path = remote_path
+                    instructions.append((computer.uuid, source_path, filename))
+                    continue
             elif remote_is_file:
                 filename = pathlib.Path(remote_path).name
             else:
@@ -377,6 +384,7 @@ class ShellJob(CalcJob):
             return [], instructions
 
         return instructions, []
+
 
     def process_arguments_and_nodes(
         self, dirpath: pathlib.Path, nodes: dict[str, SinglefileData], filenames: dict[str, str], arguments: list[str]
@@ -505,9 +513,6 @@ class ShellJob(CalcJob):
                 remote_path = node.get_remote_path()
                 filename = filenames.get(key, None)
 
-                # This implemenation will be available in aiida-core this PR is merged
-                # https://github.com/aiidateam/aiida-core/pull/6807
-                # Then, the check will be via `node.is_file`
                 authinfo = node.get_authinfo()
                 transport = authinfo.get_transport()
 

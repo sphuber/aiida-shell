@@ -149,7 +149,7 @@ def test_nodes_remote_data_filename(generate_calc_job, generate_code, tmp_path, 
 
     assert calc_info.remote_symlink_list == []
     assert sorted(calc_info.remote_copy_list) == [
-        (aiida_localhost.uuid, str(remote_path_a / '*'), 'target_remote'),
+        (aiida_localhost.uuid, str(remote_path_a), 'target_remote'),
         (aiida_localhost.uuid, str(remote_path_b / '*'), '.'),
         (aiida_localhost.uuid, str(remote_path_c), 'target_remote_file'),
         (aiida_localhost.uuid, str(remote_path_d), 'file_d.txt'),
