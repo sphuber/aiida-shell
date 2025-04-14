@@ -346,10 +346,39 @@ class ShellJob(CalcJob):
         instructions = []
 
         for key, node in remote_data_nodes.items():
+            remote_path = node.get_remote_path()
+
+            authinfo = node.get_authinfo()
+            transport = authinfo.get_transport()
+
+            with transport:
+                if not transport.path_exists(path=remote_path):
+                    msg = f"Remote path `{remote_path}` for node with key `{key}` does not exist"
+                    raise ValueError(msg)
+
+                remote_is_file = transport.isfile(remote_path)
+
+            # Resolve filename
             if key in filenames:
-                instructions.append((computer.uuid, node.get_remote_path(), filenames[key]))
+                filename = filenames[key]
+                # For directory paths with explicit filenames, preserve original behavior
+                # (copy the entire directory, not just its contents)
+                if not remote_is_file:
+                    source_path = remote_path
+                    instructions.append((computer.uuid, source_path, filename))
+                    continue
+            elif remote_is_file:
+                filename = pathlib.Path(remote_path).name
             else:
-                instructions.append((computer.uuid, f'{node.get_remote_path()}/*', '.'))
+                filename = '.'
+
+            # Resolve source_path
+            if remote_is_file:
+                source_path = remote_path
+            else:
+                source_path = f"{remote_path}/*"
+
+            instructions.append((computer.uuid, source_path, filename))
 
         if use_symlinks:
             return [], instructions
@@ -480,7 +509,18 @@ class ShellJob(CalcJob):
                             f'node `{key}` contains the file `{f}` which overlaps with a reserved output filename.'
                         )
             elif isinstance(node, RemoteData):
+                remote_path = node.get_remote_path()
                 filename = filenames.get(key, None)
+
+                authinfo = node.get_authinfo()
+                transport = authinfo.get_transport()
+
+                with transport:
+                    remote_is_file = transport.isfile(remote_path)
+
+                if not filename and remote_is_file:
+                    filename = pathlib.Path(remote_path).name
+                    filenames[key] = filename
             else:
                 continue
 
