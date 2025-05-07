@@ -10,7 +10,7 @@ import typing as t
 from aiida.common.datastructures import CalcInfo, CodeInfo, FileCopyOperation
 from aiida.common.folders import Folder
 from aiida.engine import CalcJob, CalcJobProcessSpec
-from aiida.orm import Data, Dict, FolderData, List, RemoteData, SinglefileData, to_aiida_type
+from aiida.orm import Computer, Data, Dict, FolderData, List, RemoteData, SinglefileData, to_aiida_type
 from aiida.parsers import Parser
 
 from aiida_shell.data import EntryPointData, PickledData
@@ -281,9 +281,11 @@ class ShellJob(CalcJob):
             inputs = {}
 
         nodes = inputs.get('nodes', {})
+        computer = inputs['code'].computer
         filenames = (inputs.get('filenames', None) or Dict()).get_dict()
         arguments = (inputs.get('arguments', None) or List()).get_list()
         outputs = (inputs.get('outputs', None) or List()).get_list()
+        use_symlinks = inputs['metadata']['options']['use_symlinks']
         filename_stdin = inputs['metadata']['options'].get('filename_stdin', None)
         filename_stdout = inputs['metadata']['options'].get('output_filename', None)
         default_retrieved_temporary = list(self.DEFAULT_RETRIEVED_TEMPORARY)
@@ -300,7 +302,10 @@ class ShellJob(CalcJob):
         if filename_stdin and filename_stdin in processed_arguments:
             processed_arguments.remove(filename_stdin)
 
-        remote_copy_list, remote_symlink_list = self.handle_remote_data_nodes(inputs)
+        remote_data_nodes = {key: node for key, node in nodes.items() if isinstance(node, RemoteData)}
+        remote_copy_list, remote_symlink_list = self.handle_remote_data_nodes(
+            remote_data_nodes, filenames, computer, use_symlinks
+        )
 
         code_info = CodeInfo()
         code_info.code_uuid = inputs['code'].uuid
@@ -329,16 +334,22 @@ class ShellJob(CalcJob):
         return calc_info
 
     @staticmethod
-    def handle_remote_data_nodes(inputs: dict[str, Data]) -> tuple[list[t.Any], list[t.Any]]:
-        """Handle a ``RemoteData`` that was passed in the ``nodes`` input.
+    def handle_remote_data_nodes(
+        remote_data_nodes: dict[str, RemoteData], filenames: dict[str, str], computer: Computer, use_symlinks: bool
+    ) -> tuple[list[t.Any], list[t.Any]]:
+        """Handle all ``RemoteData`` nodes that were passed in the ``nodes`` input.
 
-        :param inputs: The inputs dictionary.
+        :param remote_data_nodes: The ``RemoteData`` input nodes.
+        :param filenames: A dictionary of explicit filenames to use for the ``nodes`` to be written to ``dirpath``.
         :returns: A tuple of two lists, the ``remote_copy_list`` and the ``remote_symlink_list``.
         """
-        use_symlinks: bool = inputs['metadata']['options']['use_symlinks']  # type: ignore[index]
-        computer_uuid = inputs['code'].computer.uuid  # type: ignore[union-attr]
-        remote_nodes = [node for node in inputs.get('nodes', {}).values() if isinstance(node, RemoteData)]
-        instructions = [(computer_uuid, f'{node.get_remote_path()}/*', '.') for node in remote_nodes]
+        instructions = []
+
+        for key, node in remote_data_nodes.items():
+            if key in filenames:
+                instructions.append((computer.uuid, node.get_remote_path(), filenames[key]))
+            else:
+                instructions.append((computer.uuid, f'{node.get_remote_path()}/*', '.'))
 
         if use_symlinks:
             return [], instructions
@@ -407,7 +418,10 @@ class ShellJob(CalcJob):
                 self.write_folder_data(node, dirpath, filename)
                 argument_interpolated = argument.format(**{placeholder: filename or placeholder})
             elif isinstance(node, RemoteData):
-                self.handle_remote_data(node)
+                # Only the placeholder needs to be formatted. The content of the remote data itself is handled by the
+                # engine through the instructions created in ``handle_remote_data_nodes``.
+                filename = prepared_filenames[placeholder]
+                argument_interpolated = argument.format(**{placeholder: filename or placeholder})
             else:
                 argument_interpolated = argument.format(**{placeholder: str(node.value)})
 
@@ -465,6 +479,8 @@ class ShellJob(CalcJob):
                         raise RuntimeError(
                             f'node `{key}` contains the file `{f}` which overlaps with a reserved output filename.'
                         )
+            elif isinstance(node, RemoteData):
+                filename = filenames.get(key, None)
             else:
                 continue
 

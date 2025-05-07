@@ -164,6 +164,28 @@ def test_nodes_remote_data(tmp_path, aiida_localhost, use_symlinks):
     assert (dirpath_working / 'filled' / 'file_b.txt').read_text() == 'content b'
 
 
+def test_nodes_remote_data_filename(tmp_path_factory, aiida_localhost):
+    """Test copying contents of a ``RemoteData`` to specific subdirectory."""
+    dirpath_remote = tmp_path_factory.mktemp('remote')
+    dirpath_source = dirpath_remote / 'source'
+    dirpath_source.mkdir()
+    (dirpath_source / 'file.txt').touch()
+    remote_data = RemoteData(remote_path=str(dirpath_remote), computer=aiida_localhost)
+
+    results, node = launch_shell_job(
+        'echo',
+        arguments=['{remote}'],
+        nodes={'remote': remote_data},
+        filenames={'remote': 'sub_directory'},
+    )
+    assert node.is_finished_ok
+    assert results['stdout'].get_content().strip() == 'sub_directory'
+    dirpath_working = pathlib.Path(node.outputs.remote_folder.get_remote_path())
+    assert (dirpath_working / 'sub_directory').is_dir()
+    assert (dirpath_working / 'sub_directory' / 'source').is_dir()
+    assert (dirpath_working / 'sub_directory' / 'source' / 'file.txt').is_file()
+
+
 def test_nodes_base_types():
     """Test a shellfunction that specifies positional CLI arguments that are interpolated by the ``kwargs``."""
     nodes = {
