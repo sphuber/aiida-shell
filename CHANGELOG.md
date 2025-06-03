@@ -1,5 +1,17 @@
 # Change log
 
+## `v0.8.1` - 2025-06-03
+
+### Fixes
+- `ShellJob`: Fix `RemoteData` handling [[cfe207d]](https://github.com/sphuber/aiida-shell/commit/cfe207dbe86f0675cce509071782c8debc624c37)
+
+### Documentation
+- Fix broken commit links in `CHANGELOG.md` [[14866d1]](https://github.com/sphuber/aiida-shell/commit/14866d1450aa252ec414373e86e98611e2eae9db)
+
+### Devops
+- Add explicit `sphinx.configuration` key to RTD conf [[189df63]](https://github.com/sphuber/aiida-shell/commit/189df631759eb07e574bfb5a5be2843ea532ec9d)
+
+
 ## `v0.8.0` - 2024-09-18
 
 ### Breaking changes
